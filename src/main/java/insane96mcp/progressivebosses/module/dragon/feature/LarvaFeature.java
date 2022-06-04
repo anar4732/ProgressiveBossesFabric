@@ -1,117 +1,88 @@
 package insane96mcp.progressivebosses.module.dragon.feature;
 
-import insane96mcp.insanelib.base.Feature;
-import insane96mcp.insanelib.base.Label;
-import insane96mcp.insanelib.base.Module;
-import insane96mcp.insanelib.util.MCUtils;
-import insane96mcp.insanelib.util.RandomHelper;
-import insane96mcp.progressivebosses.module.dragon.entity.Larva;
-import insane96mcp.progressivebosses.setup.Config;
-import insane96mcp.progressivebosses.setup.PBEntities;
-import insane96mcp.progressivebosses.setup.Strings;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.levelgen.feature.EndPodiumFeature;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-
 import java.util.List;
 
+import insane96mcp.progressivebosses.ProgressiveBosses;
+import insane96mcp.progressivebosses.module.dragon.entity.Larva;
+import insane96mcp.progressivebosses.utils.DummyEvent;
+import insane96mcp.progressivebosses.utils.IEntityExtraData;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.MCUtils;
+import insane96mcp.progressivebosses.utils.RandomHelper;
+import insane96mcp.progressivebosses.utils.Strings;
+import me.lortseam.completeconfig.api.ConfigEntries;
+import me.lortseam.completeconfig.api.ConfigEntry;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
+import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.boss.dragon.EnderDragonEntity;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.Heightmap;
+import net.minecraft.world.World;
+import net.minecraft.world.gen.feature.EndPortalFeature;
+
+@ConfigEntries
 @Label(name = "Larva", description = "Mini things that are just annoying.")
-public class LarvaFeature extends Feature {
+public class LarvaFeature implements LabelConfigGroup {
 
-	private final ForgeConfigSpec.ConfigValue<Integer> larvaAtDifficultyConfig;
-	private final ForgeConfigSpec.ConfigValue<Integer> bonusLarvaEveryDifficultyConfig;
-	private final ForgeConfigSpec.ConfigValue<Integer> maxSpawnedConfig;
-	private final ForgeConfigSpec.ConfigValue<Integer> minCooldownConfig;
-	private final ForgeConfigSpec.ConfigValue<Integer> maxCooldownConfig;
-	private final ForgeConfigSpec.ConfigValue<Boolean> reducedDragonDamageConfig;
-
+	@ConfigEntry(translationKey = "Larva at Difficulty", comment = "At which difficulty the Ender Dragon starts spawning Larvae")
+	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int larvaAtDifficulty = 1;
+
+	@ConfigEntry(translationKey = "Bonus Larva Every Difficulty", comment = "As the Wither starts spawning Minions, every how much difficulty the Wither will spawn one more Minion")
+	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int bonusLarvaEveryDifficulty = 1;
+
+	@ConfigEntry(translationKey = "Max Larvae Spawned", comment = "Maximum Larva spawned by the Ender Dragon")
+	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int maxSpawned = 7;
+
+	@ConfigEntry(translationKey = "Minimum Cooldown", comment = "Minimum ticks (20 ticks = 1 seconds) after Minions can spawn.")
+	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int minCooldown = 800;
+
+	@ConfigEntry(translationKey = "Maximum Cooldown", comment = "Maximum ticks (20 ticks = 1 seconds) after Minions can spawn.")
+	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int maxCooldown = 1400;
+
+	@ConfigEntry(translationKey = "Reduced Dragon Damage", comment = "If true, Larvae will take only 10% damage from the Ender Dragon.")
 	public boolean reducedDragonDamage = true;
 
-	public LarvaFeature(Module module) {
-		super(Config.builder, module);
-		this.pushConfig(Config.builder);
-		larvaAtDifficultyConfig = Config.builder
-				.comment("At which difficulty the Ender Dragon starts spawning Larvae")
-				.defineInRange("Larva at Difficulty", larvaAtDifficulty, 0, Integer.MAX_VALUE);
-		bonusLarvaEveryDifficultyConfig = Config.builder
-				.comment("As the Wither starts spawning Minions, every how much difficulty the Wither will spawn one more Minion")
-				.defineInRange("Bonus Larva Every Difficulty", bonusLarvaEveryDifficulty, 0, Integer.MAX_VALUE);
-		maxSpawnedConfig = Config.builder
-				.comment("Maximum Larva spawned by the Ender Dragon")
-				.defineInRange("Max Larvae Spawned", maxSpawned, 0, Integer.MAX_VALUE);
-		minCooldownConfig = Config.builder
-				.comment("Minimum ticks (20 ticks = 1 seconds) after Minions can spawn.")
-				.defineInRange("Minimum Cooldown", minCooldown, 0, Integer.MAX_VALUE);
-		maxCooldownConfig = Config.builder
-				.comment("Maximum ticks (20 ticks = 1 seconds) after Minions can spawn.")
-				.defineInRange("Maximum Cooldown", maxCooldown, 0, Integer.MAX_VALUE);
-		reducedDragonDamageConfig = Config.builder
-				.comment("If true, Larvae will take only 10% damage from the Ender Dragon.")
-				.define("Reduced Dragon Damage", reducedDragonDamage);
-		Config.builder.pop();
+	public LarvaFeature(LabelConfigGroup config) {
+		config.addConfigContainer(this);
+		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> this.onDragonSpawn(new DummyEvent(world, entity)));
+		LivingEntityEvents.TICK.register((entity) -> this.update(new DummyEvent(entity.world, entity)));
 	}
 
-	@Override
-	public void loadConfig() {
-		super.loadConfig();
-		this.larvaAtDifficulty = this.larvaAtDifficultyConfig.get();
-		this.bonusLarvaEveryDifficulty = this.bonusLarvaEveryDifficultyConfig.get();
-		this.maxSpawned = this.maxSpawnedConfig.get();
-		this.minCooldown = this.minCooldownConfig.get();
-		this.maxCooldown = this.maxCooldownConfig.get();
-		if (this.minCooldown > this.maxCooldown)
-			this.minCooldown = this.maxCooldown;
-		this.reducedDragonDamage = this.reducedDragonDamageConfig.get();
-	}
-
-	@SubscribeEvent
-	public void onDragonSpawn(EntityJoinWorldEvent event) {
-		if (event.getWorld().isClientSide)
+	public void onDragonSpawn(DummyEvent event) {
+		if (event.getWorld().isClient)
 			return;
 
-		if (!this.isEnabled())
+		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
 			return;
 
-		if (!(event.getEntity() instanceof EnderDragon dragon))
-			return;
-		CompoundTag dragonTags = dragon.getPersistentData();
+		NbtCompound dragonTags = ((IEntityExtraData) dragon).getPersistentData();
 
 		int cooldown = (int) (RandomHelper.getInt(dragon.getRandom(), this.minCooldown, this.maxCooldown) * 0.5d);
 		dragonTags.putInt(Strings.Tags.DRAGON_LARVA_COOLDOWN, cooldown);
 	}
 
-	@SubscribeEvent
-	public void update(LivingEvent.LivingUpdateEvent event) {
-		if (event.getEntity().level.isClientSide)
+	public void update(DummyEvent event) {
+		if (event.getEntity().world.isClient)
 			return;
 
-		if (!this.isEnabled())
+		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
 			return;
 
-		if (!(event.getEntity() instanceof EnderDragon dragon))
-			return;
+		World world = event.getEntity().world;
 
-		Level world = event.getEntity().level;
-
-		CompoundTag dragonTags = dragon.getPersistentData();
+		NbtCompound dragonTags = ((IEntityExtraData) dragon).getPersistentData();
 
 		float difficulty = dragonTags.getFloat(Strings.Tags.DIFFICULTY);
 		if (difficulty < this.larvaAtDifficulty)
@@ -127,9 +98,9 @@ public class LarvaFeature extends Feature {
 		}
 
 		//If there is no player in the main island don't spawn larvae
-		BlockPos centerPodium = dragon.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.END_PODIUM_LOCATION);
-		AABB bb = new AABB(centerPodium).inflate(64d);
-		List<ServerPlayer> players = world.getEntitiesOfClass(ServerPlayer.class, bb);
+		BlockPos centerPodium = dragon.world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, EndPortalFeature.ORIGIN);
+		Box bb = new Box(centerPodium).expand(64d);
+		List<ServerPlayerEntity> players = world.getNonSpectatingEntities(ServerPlayerEntity.class, bb);
 
 		if (players.isEmpty())
 			return;
@@ -145,28 +116,28 @@ public class LarvaFeature extends Feature {
 			float angle = world.random.nextFloat() * (float) Math.PI * 2f;
 			float x = (float) Math.floor(Math.cos(angle) * 3.33f);
 			float z = (float) Math.floor(Math.sin(angle) * 3.33f);
-			int y = world.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(x, 255, z)).getY();
-			summonLarva(world, new Vec3(x + 0.5, y, z + 0.5), difficulty);
+			int y = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, new BlockPos(x, 255, z)).getY();
+			summonLarva(world, new Vec3d(x + 0.5, y, z + 0.5), difficulty);
 			larvaSpawnedCount++;
 			if (larvaSpawnedCount >= this.maxSpawned)
 				break;
 		}
 	}
 
-	public Larva summonLarva(Level world, Vec3 pos, float difficulty) {
-		Larva larva = new Larva(PBEntities.LARVA.get(), world);
-		CompoundTag minionTags = larva.getPersistentData();
+	public Larva summonLarva(World world, Vec3d pos, float difficulty) {
+		Larva larva = new Larva(ProgressiveBosses.LARVA, world);
+		NbtCompound minionTags = ((IEntityExtraData) larva).getPersistentData();
 
 		minionTags.putBoolean("mobspropertiesrandomness:processed", true);
 		//TODO Scaling health
 
-		larva.setPos(pos.x, pos.y, pos.z);
-		larva.setPersistenceRequired();
+		larva.setPosition(pos.x, pos.y, pos.z);
+		larva.setPersistent();
 
-		MCUtils.applyModifier(larva, Attributes.ATTACK_DAMAGE, Strings.AttributeModifiers.ATTACK_DAMAGE_BONUS_UUID, Strings.AttributeModifiers.ATTACK_DAMAGE_BONUS, 0.35 * difficulty, AttributeModifier.Operation.ADDITION);
-		MCUtils.applyModifier(larva, ForgeMod.SWIM_SPEED.get(), Strings.AttributeModifiers.SWIM_SPEED_BONUS_UUID, Strings.AttributeModifiers.SWIM_SPEED_BONUS, 2.5d, AttributeModifier.Operation.MULTIPLY_BASE);
+		MCUtils.applyModifier(larva, EntityAttributes.GENERIC_ATTACK_DAMAGE, Strings.AttributeModifiers.ATTACK_DAMAGE_BONUS_UUID, Strings.AttributeModifiers.ATTACK_DAMAGE_BONUS, 0.35 * difficulty, EntityAttributeModifier.Operation.ADDITION);
+		// MCUtils.applyModifier(larva, ForgeMod.SWIM_SPEED.get(), Strings.AttributeModifiers.SWIM_SPEED_BONUS_UUID, Strings.AttributeModifiers.SWIM_SPEED_BONUS, 2.5d, EntityAttributeModifier.Operation.MULTIPLY_BASE);
 
-		world.addFreshEntity(larva);
+		world.spawnEntity(larva);
 		return larva;
 	}
 }

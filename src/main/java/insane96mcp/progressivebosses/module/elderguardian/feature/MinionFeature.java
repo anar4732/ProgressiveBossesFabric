@@ -1,96 +1,80 @@
 package insane96mcp.progressivebosses.module.elderguardian.feature;
 
-import insane96mcp.insanelib.base.Feature;
-import insane96mcp.insanelib.base.Label;
-import insane96mcp.insanelib.base.Module;
-import insane96mcp.insanelib.util.MCUtils;
-import insane96mcp.progressivebosses.module.elderguardian.ai.ElderMinionNearestAttackableTargetGoal;
-import insane96mcp.progressivebosses.setup.Config;
-import insane96mcp.progressivebosses.setup.Strings;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.ai.goal.WrappedGoal;
-import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.monster.ElderGuardian;
-import net.minecraft.world.entity.monster.Guardian;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.loot.BuiltInLootTables;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import insane96mcp.progressivebosses.module.elderguardian.ai.ElderMinionNearestAttackableTargetGoal;
+import insane96mcp.progressivebosses.utils.DummyEvent;
+import insane96mcp.progressivebosses.utils.IEntityExtraData;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.MCUtils;
+import insane96mcp.progressivebosses.utils.Strings;
+import me.lortseam.completeconfig.api.ConfigEntries;
+import me.lortseam.completeconfig.api.ConfigEntry;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.ai.goal.ActiveTargetGoal;
+import net.minecraft.entity.ai.goal.Goal;
+import net.minecraft.entity.ai.goal.PrioritizedGoal;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
+import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.mob.ElderGuardianEntity;
+import net.minecraft.entity.mob.GuardianEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.loot.LootTables;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.TranslatableText;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
+
+@ConfigEntries
 @Label(name = "Minions", description = "Elder Guardians will spawn Elder Minions.")
-public class MinionFeature extends Feature {
+public class MinionFeature implements LabelConfigGroup {
 
-	private final ForgeConfigSpec.ConfigValue<Integer> baseCooldownConfig;
-	private final ForgeConfigSpec.ConfigValue<Integer> cooldownReductionPerMissingGuardianConfig;
-
+	@ConfigEntry(translationKey = "Base Cooldown", comment = "Elder Guardians will spawn Elder Minions every this tick value (20 ticks = 1 sec).")
+	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int baseCooldown = 200;
+
+	@ConfigEntry(translationKey = "Cooldown Reduction per Missing Elder", comment = "The base cooldown is reduced by this value for each missing Elder Guardian.")
+	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int cooldownReductionPerMissingGuardian = 60;
 
-	public MinionFeature(Module module) {
-		super(Config.builder, module);
-		this.pushConfig(Config.builder);
-		baseCooldownConfig = Config.builder
-				.comment("Elder Guardians will spawn Elder Minions every this tick value (20 ticks = 1 sec).")
-				.defineInRange("Base Cooldown", this.baseCooldown, 0, Integer.MAX_VALUE);
-		cooldownReductionPerMissingGuardianConfig = Config.builder
-				.comment("The base cooldown is reduced by this value for each missing Elder Guardian.")
-				.defineInRange("Cooldown Reduction per Missing Elder", this.cooldownReductionPerMissingGuardian, 0, Integer.MAX_VALUE);
-		Config.builder.pop();
+	public MinionFeature(LabelConfigGroup parent) {
+		parent.addConfigContainer(this);
+		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> this.onElderGuardianSpawn(new DummyEvent(world, entity)));
+		LivingEntityEvents.TICK.register((entity) -> this.update(new DummyEvent(entity.world, entity)));
 	}
 
-	@Override
-	public void loadConfig() {
-		super.loadConfig();
-		this.baseCooldown = this.baseCooldownConfig.get();
-		this.cooldownReductionPerMissingGuardian = this.cooldownReductionPerMissingGuardianConfig.get();
+	public void onElderGuardianSpawn(DummyEvent event) {
+		if (event.getWorld().isClient)
+			return;
+
+		if (!(event.getEntity() instanceof ElderGuardianEntity))
+			return;
+
+		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
+
+		NbtCompound witherTags = ((IEntityExtraData) elderGuardian).getPersistentData();
+
+		witherTags.putInt(Strings.Tags.ELDER_MINION_COOLDOWN, this.baseCooldown);
 	}
 
-	@SubscribeEvent
-	public void onElderGuardianSpawn(EntityJoinWorldEvent event) {
-		if (event.getWorld().isClientSide)
+	public void update(DummyEvent event) {
+		if (event.getEntity().world.isClient)
 			return;
 
-		if (!this.isEnabled())
+		if (!(event.getEntity() instanceof ElderGuardianEntity))
 			return;
 
-		if (!(event.getEntity() instanceof ElderGuardian elderGuardian))
-			return;
+		World world = event.getEntity().world;
 
-		CompoundTag nbt = elderGuardian.getPersistentData();
-
-		nbt.putInt(Strings.Tags.ELDER_MINION_COOLDOWN, this.baseCooldown);
-	}
-
-	@SubscribeEvent
-	public void update(LivingEvent.LivingUpdateEvent event) {
-		if (event.getEntity().level.isClientSide)
-			return;
-
-		if (!this.isEnabled())
-			return;
-
-		if (!(event.getEntity() instanceof ElderGuardian))
-			return;
-
-		Level world = event.getEntity().level;
-
-		ElderGuardian elderGuardian = (ElderGuardian) event.getEntity();
-		CompoundTag elderGuardianTags = elderGuardian.getPersistentData();
+		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
+		NbtCompound elderGuardianTags = ((IEntityExtraData) elderGuardian).getPersistentData();
 
 		if (elderGuardian.getHealth() <= 0)
 			return;
@@ -99,55 +83,54 @@ public class MinionFeature extends Feature {
 			elderGuardianTags.putInt(Strings.Tags.ELDER_MINION_COOLDOWN, cooldown - 1);
 			return;
 		}
-		cooldown = this.baseCooldown - (this.cooldownReductionPerMissingGuardian * elderGuardian.getPersistentData().getInt(Strings.Tags.DIFFICULTY));
-		elderGuardianTags.putInt(Strings.Tags.ELDER_MINION_COOLDOWN, cooldown);
+		elderGuardianTags.putInt(Strings.Tags.ELDER_MINION_COOLDOWN, this.baseCooldown - (this.cooldownReductionPerMissingGuardian * BaseFeature.getDeadElderGuardians(elderGuardian)));
 
 		//If there is no player in a radius from the elderGuardian, don't spawn minions
 		int radius = 24;
-		BlockPos pos1 = elderGuardian.blockPosition().offset(-radius, -radius, -radius);
-		BlockPos pos2 = elderGuardian.blockPosition().offset(radius, radius, radius);
-		AABB bb = new AABB(pos1, pos2);
-		List<ServerPlayer> players = world.getEntitiesOfClass(ServerPlayer.class, bb);
+		BlockPos pos1 = elderGuardian.getBlockPos().add(-radius, -radius, -radius);
+		BlockPos pos2 = elderGuardian.getBlockPos().add(radius, radius, radius);
+		Box bb = new Box(pos1, pos2);
+		List<ServerPlayerEntity> players = world.getNonSpectatingEntities(ServerPlayerEntity.class, bb);
 
 		if (players.isEmpty())
 			return;
 
-		List<Guardian> minionsInAABB = world.getEntitiesOfClass(Guardian.class, elderGuardian.getBoundingBox().inflate(12), entity -> entity.getPersistentData().contains(Strings.Tags.ELDER_MINION));
+		List<GuardianEntity> minionsInAABB = world.getEntitiesByClass(GuardianEntity.class, elderGuardian.getBoundingBox().expand(12), entity -> ((IEntityExtraData) entity).getPersistentData().contains(Strings.Tags.ELDER_MINION));
 		int minionsCountInAABB = minionsInAABB.size();
 
 		if (minionsCountInAABB >= 5)
 			return;
 
-		summonMinion(world, new Vec3(elderGuardian.getX(), elderGuardian.getY(), elderGuardian.getZ()));
+		summonMinion(world, new Vec3d(elderGuardian.getX(), elderGuardian.getY(), elderGuardian.getZ()));
 	}
 
-	public Guardian summonMinion(Level world, Vec3 pos) {
-		Guardian elderMinion = new Guardian(EntityType.GUARDIAN, world);
-		CompoundTag minionTags = elderMinion.getPersistentData();
+	public GuardianEntity summonMinion(World world, Vec3d pos) {
+		GuardianEntity elderMinion = new GuardianEntity(EntityType.GUARDIAN, world);
+		NbtCompound minionTags = ((IEntityExtraData) elderMinion).getPersistentData();
 
 		minionTags.putBoolean("mobspropertiesrandomness:processed", true);
 		//TODO Scaling health
 
 		minionTags.putBoolean(Strings.Tags.ELDER_MINION, true);
 
-		elderMinion.setPos(pos.x, pos.y, pos.z);
-		elderMinion.setCustomName(new TranslatableComponent(Strings.Translatable.ELDER_MINION));
-		elderMinion.lootTable = BuiltInLootTables.EMPTY;
+		elderMinion.setPosition(pos.x, pos.y, pos.z);
+		elderMinion.setCustomName(new TranslatableText(Strings.Translatable.ELDER_MINION));
+		elderMinion.lootTable = LootTables.EMPTY;
 
-		MCUtils.applyModifier(elderMinion, ForgeMod.SWIM_SPEED.get(), Strings.AttributeModifiers.SWIM_SPEED_BONUS_UUID, Strings.AttributeModifiers.SWIM_SPEED_BONUS, 2d, AttributeModifier.Operation.MULTIPLY_BASE);
+		MCUtils.applyModifier(elderMinion, EntityAttributes.GENERIC_MOVEMENT_SPEED, Strings.AttributeModifiers.SWIM_SPEED_BONUS_UUID, Strings.AttributeModifiers.SWIM_SPEED_BONUS, 2d, EntityAttributeModifier.Operation.MULTIPLY_BASE);
 
 		ArrayList<Goal> goalsToRemove = new ArrayList<>();
-		for (WrappedGoal prioritizedGoal : elderMinion.targetSelector.availableGoals) {
-			if (!(prioritizedGoal.getGoal() instanceof NearestAttackableTargetGoal))
+		for (PrioritizedGoal prioritizedGoal : elderMinion.targetSelector.goals) {
+			if (!(prioritizedGoal.getGoal() instanceof ActiveTargetGoal))
 				continue;
 
 			goalsToRemove.add(prioritizedGoal.getGoal());
 		}
 
-		goalsToRemove.forEach(elderMinion.goalSelector::removeGoal);
-		elderMinion.targetSelector.addGoal(1, new ElderMinionNearestAttackableTargetGoal<>(elderMinion, Player.class, true));
+		goalsToRemove.forEach(elderMinion.goalSelector::remove);
+		elderMinion.targetSelector.add(1, new ElderMinionNearestAttackableTargetGoal<>(elderMinion, PlayerEntity.class, true));
 
-		world.addFreshEntity(elderMinion);
+		world.spawnEntity(elderMinion);
 		return elderMinion;
 	}
 }

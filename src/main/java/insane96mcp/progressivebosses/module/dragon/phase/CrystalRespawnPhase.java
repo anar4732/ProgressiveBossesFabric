@@ -2,30 +2,29 @@ package insane96mcp.progressivebosses.module.dragon.phase;
 
 import insane96mcp.progressivebosses.module.dragon.feature.CrystalFeature;
 import insane96mcp.progressivebosses.utils.LogHelper;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.boss.enderdragon.phases.AbstractDragonPhaseInstance;
-import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
-import net.minecraft.world.level.Explosion;
-import net.minecraft.world.level.levelgen.feature.SpikeFeature;
-import net.minecraft.world.phys.Vec3;
-
 import javax.annotation.Nullable;
+import net.minecraft.entity.boss.dragon.EnderDragonEntity;
+import net.minecraft.entity.boss.dragon.phase.AbstractPhase;
+import net.minecraft.entity.boss.dragon.phase.PhaseType;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.decoration.EndCrystalEntity;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.explosion.Explosion;
+import net.minecraft.world.gen.feature.EndSpikeFeature;
 import java.util.ArrayList;
 
-public class CrystalRespawnPhase extends AbstractDragonPhaseInstance {
-	private static EnderDragonPhase<CrystalRespawnPhase> CRYSTAL_RESPAWN;
+public class CrystalRespawnPhase extends AbstractPhase {
+	private static PhaseType<CrystalRespawnPhase> CRYSTAL_RESPAWN;
 
-	public Vec3 targetLocation;
+	public Vec3d targetLocation;
 	private int tick = 0;
 	private boolean respawning = false;
-	private final ArrayList<SpikeFeature.EndSpike> spikesToRespawn = new ArrayList<>();
+	private final ArrayList<EndSpikeFeature.Spike> spikesToRespawn = new ArrayList<>();
 
 	private final int TICK_RESPAWN_CRYSTAL = 50;
 
-	public CrystalRespawnPhase(EnderDragon dragonIn) {
+	public CrystalRespawnPhase(EnderDragonEntity dragonIn) {
 		super(dragonIn);
 	}
 
@@ -33,36 +32,36 @@ public class CrystalRespawnPhase extends AbstractDragonPhaseInstance {
 	 * Gives the phase a chance to update its status.
 	 * Called by dragon's onLivingUpdate. Only used when !worldObj.isClientSide.
 	 */
-	public void doServerTick() {
+	public void serverTick() {
 		if (this.targetLocation == null) {
 			if (spikesToRespawn.isEmpty()) {
-				dragon.getPhaseManager().setPhase(EnderDragonPhase.TAKEOFF);
+				dragon.getPhaseManager().setPhase(PhaseType.TAKEOFF);
 				LogHelper.warn("Canceling Crystal respawn phase because no spikes to respawn were found");
 				return;
 			}
-			this.targetLocation = new Vec3(spikesToRespawn.get(0).getCenterX() + 0.5, spikesToRespawn.get(0).getHeight() + 5.5, spikesToRespawn.get(0).getCenterZ() + 0.5);
+			this.targetLocation = new Vec3d(spikesToRespawn.get(0).getCenterX() + 0.5, spikesToRespawn.get(0).getHeight() + 5.5, spikesToRespawn.get(0).getCenterZ() + 0.5);
 		}
 		if (!respawning) {
-			double d0 = this.targetLocation.distanceToSqr(dragon.getX(), dragon.getY(), dragon.getZ());
+			double d0 = this.targetLocation.squaredDistanceTo(dragon.getX(), dragon.getY(), dragon.getZ());
 			if (d0 < 9d) { //sqrt = 3
-				dragon.setDeltaMovement(Vec3.ZERO);
+				dragon.setVelocity(Vec3d.ZERO);
 				respawning = true;
 			}
 		}
 		else {
 			tick++;
-			dragon.setDeltaMovement(Vec3.ZERO);
+			dragon.setVelocity(Vec3d.ZERO);
 			if (tick <= 25)
-				dragon.playSound(SoundEvents.ENDER_DRAGON_GROWL, 4F, 1.0F);
+				dragon.playSound(SoundEvents.ENTITY_ENDER_DRAGON_GROWL, 4F, 1.0F);
 			if (tick >= TICK_RESPAWN_CRYSTAL) {
 				double x = spikesToRespawn.get(0).getCenterX();
 				double y = spikesToRespawn.get(0).getHeight();
 				double z = spikesToRespawn.get(0).getCenterZ();
-				EndCrystal crystal = new EndCrystal(dragon.level, x + 0.5, y + 1, z + 0.5);
+				EndCrystalEntity crystal = new EndCrystalEntity(dragon.world, x + 0.5, y + 1, z + 0.5);
 				crystal.setShowBottom(true);
-				crystal.level.explode(dragon, x + 0.5, y + 1.5, z + 0.5, 5f, Explosion.BlockInteraction.NONE);
-				dragon.level.addFreshEntity(crystal);
-				CrystalFeature.generateCage(crystal.level, crystal.blockPosition());
+				crystal.world.createExplosion(dragon, x + 0.5, y + 1.5, z + 0.5, 5f, Explosion.DestructionType.NONE);
+				dragon.world.spawnEntity(crystal);
+				CrystalFeature.generateCage(crystal.world, crystal.getBlockPos());
 				spikesToRespawn.remove(0);
 				if (this.spikesToRespawn.size() == 0)
 				LogHelper.info("No more crystals to respawn left");
@@ -73,14 +72,14 @@ public class CrystalRespawnPhase extends AbstractDragonPhaseInstance {
 		}
 	}
 
-	public boolean isSitting() {
+	public boolean isSittingOrHovering() {
 		return respawning;
 	}
 
 	/**
 	 * Called when this phase is set to active
 	 */
-	public void begin() {
+	public void beginPhase() {
 		this.targetLocation = null;
 		this.spikesToRespawn.clear();
 	}
@@ -88,7 +87,7 @@ public class CrystalRespawnPhase extends AbstractDragonPhaseInstance {
 	/**
 	 * Returns the maximum amount dragon may rise or fall during this phase
 	 */
-	public float getFlySpeed() {
+	public float getMaxYAcceleration() {
 		return 24F;
 	}
 
@@ -96,32 +95,32 @@ public class CrystalRespawnPhase extends AbstractDragonPhaseInstance {
 	 * Returns the location the dragon is flying toward
 	 */
 	@Nullable
-	public Vec3 getFlyTargetLocation() {
+	public Vec3d getPathTarget() {
 		return this.targetLocation;
 	}
 
-	public void addCrystalRespawn(SpikeFeature.EndSpike spike) {
+	public void addCrystalRespawn(EndSpikeFeature.Spike spike) {
 		if (!this.spikesToRespawn.contains(spike))
 			this.spikesToRespawn.add(spike);
 	}
 
 	@Override
-	public float onHurt(DamageSource source, float amount) {
-		if (source.isExplosion() && !source.getMsgId().equals("fireworks"))
+	public float modifyDamageTaken(DamageSource source, float amount) {
+		if (source.isExplosive() && !source.getName().equals("fireworks"))
 			return amount;
 
 		return amount * 1.33f;
 	}
 
-	public EnderDragonPhase<CrystalRespawnPhase> getPhase() {
+	public PhaseType<CrystalRespawnPhase> getType() {
 		return CRYSTAL_RESPAWN;
 	}
 
-	public static EnderDragonPhase<CrystalRespawnPhase> getPhaseType() {
+	public static PhaseType<CrystalRespawnPhase> getPhaseType() {
 		return CRYSTAL_RESPAWN;
 	}
 
 	public static void init() {
-		CRYSTAL_RESPAWN = EnderDragonPhase.create(CrystalRespawnPhase.class, "CrystalRespawn");
+		CRYSTAL_RESPAWN = PhaseType.register(CrystalRespawnPhase.class, "CrystalRespawn");
 	}
 }

@@ -1,12 +1,23 @@
 package insane96mcp.progressivebosses.module.dragon;
 
-import insane96mcp.insanelib.base.Label;
-import insane96mcp.insanelib.base.Module;
-import insane96mcp.progressivebosses.module.dragon.feature.*;
-import insane96mcp.progressivebosses.setup.Config;
+import java.util.ArrayList;
+
+import insane96mcp.progressivebosses.module.dragon.feature.AttackFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.CrystalFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.DifficultyFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.HealthFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.LarvaFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.MinionFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.ResistancesFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.RewardFeature;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import me.lortseam.completeconfig.api.ConfigContainer;
 
 @Label(name = "Dragon")
-public class DragonModule extends Module {
+public class DragonModule implements LabelConfigGroup {
+
+	private ArrayList<ConfigContainer> configs = new ArrayList<>();
 
 	public DifficultyFeature difficulty;
 	public HealthFeature health;
@@ -17,9 +28,17 @@ public class DragonModule extends Module {
 	public ResistancesFeature resistances;
 	public CrystalFeature crystal;
 
+	@Override
+	public void addConfigContainer(ConfigContainer config) {
+		this.configs.add(config);
+	}
+
+	@Override
+    public ConfigContainer[] getTransitives() {
+		return this.configs.toArray(new ConfigContainer[0]);
+    }
+
 	public DragonModule() {
-		super(Config.builder);
-		pushConfig(Config.builder);
 		difficulty = new DifficultyFeature(this);
 		health = new HealthFeature(this);
 		attack = new AttackFeature(this);
@@ -28,19 +47,5 @@ public class DragonModule extends Module {
 		larva = new LarvaFeature(this);
 		resistances = new ResistancesFeature(this);
 		crystal = new CrystalFeature(this);
-		Config.builder.pop();
-	}
-
-	@Override
-	public void loadConfig() {
-		super.loadConfig();
-		difficulty.loadConfig();
-		health.loadConfig();
-		attack.loadConfig();
-		reward.loadConfig();
-		minion.loadConfig();
-		larva.loadConfig();
-		resistances.loadConfig();
-		crystal.loadConfig();
 	}
 }

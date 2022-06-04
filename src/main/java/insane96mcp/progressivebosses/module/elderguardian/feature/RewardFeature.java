@@ -1,99 +1,93 @@
 package insane96mcp.progressivebosses.module.elderguardian.feature;
 
-import insane96mcp.insanelib.base.Feature;
-import insane96mcp.insanelib.base.Label;
-import insane96mcp.insanelib.base.Module;
-import insane96mcp.progressivebosses.ProgressiveBosses;
-import insane96mcp.progressivebosses.setup.Config;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.monster.ElderGuardian;
-import net.minecraft.world.level.storage.loot.LootPool;
-import net.minecraft.world.level.storage.loot.entries.LootTableReference;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.event.LootTableLoadEvent;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
-import net.minecraftforge.event.entity.living.LivingExperienceDropEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import insane96mcp.progressivebosses.utils.Drop;
+import insane96mcp.progressivebosses.utils.DummyEvent;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingDeathEvent;
+import me.lortseam.completeconfig.api.ConfigEntries;
+import me.lortseam.completeconfig.api.ConfigEntry;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.minecraft.entity.mob.ElderGuardianEntity;
+
+@ConfigEntries
 @Label(name = "Rewards", description = "Bonus Experience and Dragon Egg per player")
-public class RewardFeature extends Feature {
+public class RewardFeature implements LabelConfigGroup {
 
-	private final ForgeConfigSpec.ConfigValue<Integer> baseExperienceConfig;
-	private final ForgeConfigSpec.ConfigValue<Double> bonusExperienceConfig;
-	private final ForgeConfigSpec.ConfigValue<Boolean> injectDefaultRewardsConfig;
-
+	@ConfigEntry(translationKey = "Base Experience", comment = "How much experience will an Elder Guardian drop.")
+	@ConfigEntry.BoundedInteger(min = 0, max = 1024)
 	public int baseExperience = 40;
+
+	@ConfigEntry(translationKey = "Bonus Experience", comment = "How much more experience (percentage) will Elder Guardian drop per killed Elder Guardian. The percentage is additive (e.g. with this set to 100%, the last Elder will drop 200% more experience)")
+	@ConfigEntry.BoundedDouble(min = 0.0, max = Double.MAX_VALUE)
 	public double bonusExperience = 1.0d;
-	public boolean injectDefaultRewards = true;
 
-	public RewardFeature(Module module) {
-		super(Config.builder, module);
-		this.pushConfig(Config.builder);
-		baseExperienceConfig = Config.builder
-				.comment("How much experience will an Elder Guardian drop. -1 will make the Elder Guardian drop vanilla experience.")
-				.defineInRange("Base Experience", this.baseExperience, -1, 1024);
-		bonusExperienceConfig = Config.builder
-				.comment("How much more experience (percentage) will Elder Guardian drop per killed Elder Guardian. The percentage is additive (e.g. with this set to 100%, the last Elder will drop 200% more experience)")
-				.defineInRange("Bonus Experience", bonusExperience, 0.0, Double.MAX_VALUE);
-		injectDefaultRewardsConfig = Config.builder
-				.comment("If true default mod drops are added to the Elder Guardian.\n" +
-						"Note that replacing the Elder Guardian loot table (e.g. via DataPack) will automatically remove the Injected loot.")
-				.define("Injecet Default Loot", this.injectDefaultRewards);
-		Config.builder.pop();
+	@ConfigEntry(translationKey = "Drops", comment = "A list of bonus drops for the Elder Guardian. Entry format: item,amount,missing_guardians,chance,mode,chance_mode\n" +
+			"item: item id\n" +
+			"amount: amount\n" +
+			"missing_guardians: the amount of missing guardians required for the item to drop, works differently based on mode\n" +
+			"chance: chance for the drop to happen, between 0 and 1\n" +
+			"mode:\n" +
+			"* MINIMUM: will try to drop the item when the missing_guardians matches or is higher\n" +
+			"* PER_DIFFICULTY: will try to drop the item one more time per missing_guardians\n" +
+			"chance_mode:\n" +
+			"* FLAT: chance is the percentage chance for the item to drop if the difficulty criteria matches\n" +
+			"* SCALING: each point of difficulty >= 'difficulty to drop the item' will be multiplied by the chance (e.g. chance 2% and difficulty 10, difficulty required 5, chance to drop the item will be chance * (difficulty - difficulty_required + 1) = 2% * (10 - 5 + 1) = 12%)\n")
+	private static List<String> dropsListConfig = Arrays.asList("minecraft:wet_sponge,1,0,1,MINIMUM,FLAT", "minecraft:wet_sponge,2,1,1,MINIMUM,FLAT", "minecraft:wet_sponge,2,2,1,MINIMUM,FLAT", "progressivebosses:elder_guardian_spike,1,0,1,MINIMUM,FLAT");
+	
+	@ConfigEntries.Exclude
+	public ArrayList<Drop> dropsList;
+	
+	public RewardFeature(LabelConfigGroup parent) {
+		parent.addConfigContainer(this);
+		this.dropsList = Drop.parseDropsList(dropsListConfig);
+		LivingEntityEvents.DEATH.register((event) -> this.onDeath(event));
+		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> this.onSpawn(new DummyEvent(world, entity)));
+
 	}
 
-	@Override
-	public void loadConfig() {
-		super.loadConfig();
-		this.baseExperience = this.baseExperienceConfig.get();
-		this.bonusExperience = this.bonusExperienceConfig.get();
-		this.injectDefaultRewards = this.injectDefaultRewardsConfig.get();
+	public void onSpawn(DummyEvent event) {
+		if (event.getWorld().isClient)
+			return;
+
+		if (this.baseExperience == 0d)
+			return;
+
+		if (!(event.getEntity() instanceof ElderGuardianEntity))
+			return;
+
+		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
+
+		elderGuardian.experiencePoints = (int) (this.baseExperience * this.bonusExperience);
 	}
 
-	@SubscribeEvent
-	public void onSpawn(EntityJoinWorldEvent event) {
-		if (event.getWorld().isClientSide)
+	// public void onExperienceDrop(LivingExperienceDropEvent event) {
+	// 	if (this.bonusExperience == 0d)
+	// 		return;
+
+	// 	if (!(event.getEntity() instanceof ElderGuardianEntity))
+	// 		return;
+
+	// 	int bonusExperience = (int) (event.getOriginalExperience() * (this.bonusExperience));
+	// 	event.setDroppedExperience(event.getOriginalExperience() + bonusExperience);
+	// }
+
+	public void onDeath(OnLivingDeathEvent event) {
+		if (this.dropsList.isEmpty())
 			return;
 
-		if (!this.isEnabled())
+		if (!(event.getEntity() instanceof ElderGuardianEntity))
 			return;
 
-		if (this.baseExperience == -1d)
-			return;
+		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
 
-		if (!(event.getEntity() instanceof ElderGuardian elderGuardian))
-			return;
-
-		elderGuardian.xpReward = this.baseExperience;
+		for (Drop drop : this.dropsList) {
+			drop.drop(elderGuardian.world, elderGuardian.getPos(), BaseFeature.getDeadElderGuardians(elderGuardian));
+		}
 	}
-
-	@SubscribeEvent
-	public void onExperienceDrop(LivingExperienceDropEvent event) {
-		if (!this.isEnabled())
-			return;
-
-		if (this.bonusExperience == 0d)
-			return;
-
-		if (!(event.getEntity() instanceof ElderGuardian))
-			return;
-
-		int bonusExperience = (int) (event.getOriginalExperience() * (this.bonusExperience));
-		event.setDroppedExperience(event.getOriginalExperience() + bonusExperience);
-	}
-
-	@SubscribeEvent
-	public void onLootTableLoad(LootTableLoadEvent event) {
-		if (!this.isEnabled() || !this.injectDefaultRewards)
-			return;
-
-		ResourceLocation name = event.getName();
-		if (!"minecraft".equals(name.getNamespace()) || !"entities/elder_guardian".equals(name.getPath()))
-			return;
-
-		LootPool pool = new LootPool.Builder().setRolls(ConstantValue.exactly(1)).add(LootTableReference.lootTableReference(new ResourceLocation(ProgressiveBosses.MOD_ID, "entities/elder_guardian"))).build();
-		event.getTable().addPool(pool);
-	}
-
 }

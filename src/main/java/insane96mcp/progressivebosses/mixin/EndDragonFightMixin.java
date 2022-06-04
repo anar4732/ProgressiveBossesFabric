@@ -1,11 +1,5 @@
 package insane96mcp.progressivebosses.mixin;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
-import net.minecraft.world.level.Explosion;
-import net.minecraft.world.level.dimension.end.EndDragonFight;
-import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -14,20 +8,26 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nullable;
+import net.minecraft.entity.boss.dragon.EnderDragonFight;
+import net.minecraft.entity.decoration.EndCrystalEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.world.explosion.Explosion;
 import java.util.List;
 
-@Mixin(EndDragonFight.class)
+@Mixin(EnderDragonFight.class)
 public class EndDragonFightMixin {
 
-	@Shadow @Final private ServerLevel level;
+	@Shadow @Final private ServerWorld world;
 
-	@Shadow @Nullable private BlockPos portalLocation;
+	@Shadow @Nullable private BlockPos exitPortalLocation;
 
-	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/dimension/end/EndDragonFight;spawnExitPortal(Z)V"), method = "respawnDragon")
-	private void respawnDragon(List<EndCrystal> p_64092_, CallbackInfo callback) {
-		List<EndCrystal> endCrystals = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(this.portalLocation).inflate(48d), EndCrystal::showsBottom);
-		for (EndCrystal endCrystal : endCrystals) {
-			endCrystal.level.explode(endCrystal, endCrystal.getX(), endCrystal.getY(), endCrystal.getZ(), 6.0F, Explosion.BlockInteraction.NONE);
+	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/boss/dragon/EnderDragonFight;generateEndPortal(Z)V"), method = "respawnDragon(Ljava/util/List;)V")
+	private void respawnDragon(List<EndCrystalEntity> p_64092_, CallbackInfo callback) {
+		List<EndCrystalEntity> endCrystals = this.world.getEntitiesByClass(EndCrystalEntity.class, new Box(this.exitPortalLocation).expand(48d), EndCrystalEntity::shouldShowBottom);
+		for (EndCrystalEntity endCrystal : endCrystals) {
+			endCrystal.world.createExplosion(endCrystal, endCrystal.getX(), endCrystal.getY(), endCrystal.getZ(), 6.0F, Explosion.DestructionType.NONE);
 			endCrystal.discard();
 		}
 	}

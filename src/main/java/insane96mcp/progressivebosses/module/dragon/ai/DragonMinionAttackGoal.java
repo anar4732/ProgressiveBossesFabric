@@ -1,34 +1,34 @@
 package insane96mcp.progressivebosses.module.dragon.ai;
 
-import insane96mcp.progressivebosses.setup.Strings;
 import insane96mcp.progressivebosses.utils.DragonMinionHelper;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.sounds.SoundEvents;
+import insane96mcp.progressivebosses.utils.IEntityExtraData;
+import insane96mcp.progressivebosses.utils.Strings;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.ai.goal.Goal;
+import net.minecraft.entity.mob.ShulkerEntity;
+import net.minecraft.entity.projectile.ShulkerBulletEntity;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.monster.Shulker;
-import net.minecraft.world.entity.projectile.ShulkerBullet;
-
 import java.util.EnumSet;
 
 public class DragonMinionAttackGoal extends Goal {
 
     private int attackTime;
-    private final Shulker shulker;
+    private final ShulkerEntity shulker;
 
     private final int baseAttackInterval;
 
-    public DragonMinionAttackGoal(Shulker shulker, int attackInterval) {
+    public DragonMinionAttackGoal(ShulkerEntity shulker, int attackInterval) {
         this.shulker = shulker;
         this.baseAttackInterval = attackInterval / 2;
-        this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+        this.setControls(EnumSet.of(Control.MOVE, Control.LOOK));
     }
 
-    public boolean canUse() {
+    public boolean canStart() {
         LivingEntity livingentity = shulker.getTarget();
         if (livingentity != null && livingentity.isAlive()) {
-            return shulker.level.getDifficulty() != Difficulty.PEACEFUL;
+            return shulker.world.getDifficulty() != Difficulty.PEACEFUL;
         } else {
             return false;
         }
@@ -36,33 +36,33 @@ public class DragonMinionAttackGoal extends Goal {
 
     public void start() {
         this.attackTime = this.baseAttackInterval;
-        shulker.setRawPeekAmount(100);
+        shulker.setPeekAmount(100);
     }
 
     public void stop() {
-        shulker.setRawPeekAmount(0);
+        shulker.setPeekAmount(0);
     }
 
     public void tick() {
-        if (shulker.level.getDifficulty() == Difficulty.PEACEFUL)
+        if (shulker.world.getDifficulty() == Difficulty.PEACEFUL)
             return;
 
         --this.attackTime;
         LivingEntity livingentity = shulker.getTarget();
         if (livingentity == null)
             return;
-        shulker.getLookControl().setLookAt(livingentity, 180.0F, 180.0F);
-        double d0 = shulker.distanceToSqr(livingentity.position());
+        shulker.getLookControl().lookAt(livingentity, 180.0F, 180.0F);
+        double d0 = shulker.squaredDistanceTo(livingentity.getPos());
         if (d0 < 9216d) { //96 blocks
             if (this.attackTime <= 0) {
                 this.attackTime = this.baseAttackInterval + shulker.getRandom().nextInt(10) * this.baseAttackInterval / 2;
-                ShulkerBullet bullet = new ShulkerBullet(shulker.level, shulker, livingentity, shulker.getAttachFace().getAxis());
+                ShulkerBulletEntity bullet = new ShulkerBulletEntity(shulker.world, shulker, livingentity, shulker.getAttachedFace().getAxis());
                 if (DragonMinionHelper.isBlindingMinion(this.shulker)) {
-                    CompoundTag nbt = bullet.getPersistentData();
+                    NbtCompound nbt = ((IEntityExtraData) bullet).getPersistentData();
                     nbt.putBoolean(Strings.Tags.BLINDNESS_BULLET, true);
                 }
-                shulker.level.addFreshEntity(bullet);
-                shulker.playSound(SoundEvents.SHULKER_SHOOT, 2.0F, (shulker.level.random.nextFloat() - shulker.level.random.nextFloat()) * 0.2F + 1.0F);
+                shulker.world.spawnEntity(bullet);
+                shulker.playSound(SoundEvents.ENTITY_SHULKER_SHOOT, 2.0F, (shulker.world.random.nextFloat() - shulker.world.random.nextFloat()) * 0.2F + 1.0F);
             }
         } else {
             shulker.setTarget(null);

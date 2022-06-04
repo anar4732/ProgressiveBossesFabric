@@ -1,12 +1,22 @@
 package insane96mcp.progressivebosses.module.wither;
 
-import insane96mcp.insanelib.base.Label;
-import insane96mcp.insanelib.base.Module;
-import insane96mcp.progressivebosses.module.wither.feature.*;
-import insane96mcp.progressivebosses.setup.Config;
+import java.util.ArrayList;
+
+import insane96mcp.progressivebosses.module.wither.feature.AttackFeature;
+import insane96mcp.progressivebosses.module.wither.feature.DifficultyFeature;
+import insane96mcp.progressivebosses.module.wither.feature.HealthFeature;
+import insane96mcp.progressivebosses.module.wither.feature.MinionFeature;
+import insane96mcp.progressivebosses.module.wither.feature.MiscFeature;
+import insane96mcp.progressivebosses.module.wither.feature.ResistancesFeature;
+import insane96mcp.progressivebosses.module.wither.feature.RewardFeature;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import me.lortseam.completeconfig.api.ConfigContainer;
 
 @Label(name = "Wither")
-public class WitherModule extends Module {
+public class WitherModule implements LabelConfigGroup {
+
+	private ArrayList<ConfigContainer> configs = new ArrayList<>();
 
 	public DifficultyFeature difficulty;
 	public MiscFeature misc;
@@ -16,9 +26,17 @@ public class WitherModule extends Module {
 	public MinionFeature minion;
 	public AttackFeature attack;
 
+	@Override
+	public void addConfigContainer(ConfigContainer config) {
+		this.configs.add(config);
+	}
+
+	@Override
+    public ConfigContainer[] getTransitives() {
+		return this.configs.toArray(new ConfigContainer[0]);
+    }
+
 	public WitherModule() {
-		super(Config.builder);
-		pushConfig(Config.builder);
 		//Must be the first one to be initialized, otherwise the other modules will not get the correct difficulty settings
 		difficulty = new DifficultyFeature(this);
 		misc = new MiscFeature(this);
@@ -27,18 +45,6 @@ public class WitherModule extends Module {
 		reward = new RewardFeature(this);
 		minion = new MinionFeature(this);
 		attack = new AttackFeature(this);
-		Config.builder.pop();
 	}
 
-	@Override
-	public void loadConfig() {
-		super.loadConfig();
-		difficulty.loadConfig();
-		misc.loadConfig();
-		health.loadConfig();
-		resistances.loadConfig();
-		reward.loadConfig();
-		minion.loadConfig();
-		attack.loadConfig();
-	}
 }

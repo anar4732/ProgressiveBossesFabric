@@ -1,81 +1,67 @@
 package insane96mcp.progressivebosses.module.dragon.feature;
 
-import insane96mcp.insanelib.base.Feature;
-import insane96mcp.insanelib.base.Label;
-import insane96mcp.insanelib.base.Module;
-import insane96mcp.progressivebosses.setup.Config;
-import insane96mcp.progressivebosses.setup.Strings;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
-import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
-import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-
 import java.util.Arrays;
 import java.util.List;
 
+import insane96mcp.progressivebosses.utils.IEntityExtraData;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingHurtEvent;
+import insane96mcp.progressivebosses.utils.Strings;
+import me.lortseam.completeconfig.api.ConfigEntries;
+import me.lortseam.completeconfig.api.ConfigEntry;
+import net.minecraft.entity.boss.dragon.EnderDragonEntity;
+import net.minecraft.entity.boss.dragon.phase.Phase;
+import net.minecraft.entity.boss.dragon.phase.PhaseType;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.NbtCompound;
+
+@ConfigEntries
 @Label(name = "Resistances & Vulnerabilities", description = "Handles the Damage Resistances and Vulnerabilities")
-public class ResistancesFeature extends Feature {
+public class ResistancesFeature implements LabelConfigGroup {
 
-	private final ForgeConfigSpec.ConfigValue<Double> damageRedutionWhenSittingConfig;
-	private final ForgeConfigSpec.ConfigValue<Double> explosionDamageReductionConfig;
-
+	@ConfigEntry(translationKey = "Melee Damage reduction while at the center", comment = "Melee Damage reduction per difficulty while the Ender Dragon is at the center.")
+	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double damageRedutionWhenSitting = 0.08d;
+
+	@ConfigEntry(translationKey = "Explosion Damage reduction", comment = "Damage reduction when hit by explosions (firework rockets excluded).")
+	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double explosionDamageReduction = 0.667d;
 
-	public ResistancesFeature(Module module) {
-		super(Config.builder, module);
-		this.pushConfig(Config.builder);
-		damageRedutionWhenSittingConfig = Config.builder
-				.comment("Melee Damage reduction per difficulty while the Ender Dragon is at the center.")
-				.defineInRange("Melee Damage reduction while at the center", damageRedutionWhenSitting, 0d, Double.MAX_VALUE);
-		explosionDamageReductionConfig = Config.builder
-				.comment("Damage reduction when hit by explosions (firework rockets excluded).")
-				.defineInRange("Explosion Damage reduction", explosionDamageReduction, 0d, Double.MAX_VALUE);
-		Config.builder.pop();
+	public ResistancesFeature(LabelConfigGroup parent) {
+		parent.addConfigContainer(this);
+		LivingEntityEvents.HURT.register((event) -> this.onDragonDamage(event));
 	}
 
-	@Override
-	public void loadConfig() {
-		super.loadConfig();
-		this.damageRedutionWhenSitting = this.damageRedutionWhenSittingConfig.get();
-		this.explosionDamageReduction = this.explosionDamageReductionConfig.get();
-	}
-
-	@SubscribeEvent
-	public void onDragonDamage(LivingDamageEvent event) {
-		if (!this.isEnabled())
-			return;
-
-		if (!(event.getEntity() instanceof EnderDragon dragon))
+	public void onDragonDamage(OnLivingHurtEvent event) {
+		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
 			return;
 
 		meleeDamageReduction(event, dragon);
 		explosionDamageReduction(event, dragon);
 	}
 
-	private static final List<EnderDragonPhase<? extends DragonPhaseInstance>> sittingPhases = Arrays.asList(EnderDragonPhase.SITTING_SCANNING, EnderDragonPhase.SITTING_ATTACKING, EnderDragonPhase.SITTING_FLAMING, EnderDragonPhase.TAKEOFF);
+	@ConfigEntries.Exclude
+	private static final List<PhaseType<? extends Phase>> sittingPhases = Arrays.asList(PhaseType.SITTING_SCANNING, PhaseType.SITTING_ATTACKING, PhaseType.SITTING_FLAMING, PhaseType.TAKEOFF);
 
-	private void meleeDamageReduction(LivingDamageEvent event, EnderDragon dragon) {
+	private void meleeDamageReduction(OnLivingHurtEvent event, EnderDragonEntity dragon) {
 		if (this.damageRedutionWhenSitting == 0d)
 			return;
 
-		CompoundTag compoundNBT = dragon.getPersistentData();
+		NbtCompound compoundNBT = ((IEntityExtraData) dragon).getPersistentData();
 		float difficulty = compoundNBT.getFloat(Strings.Tags.DIFFICULTY);
 
-		if (sittingPhases.contains(dragon.getPhaseManager().getCurrentPhase().getPhase()) && event.getSource().getDirectEntity() instanceof Player) {
+		if (sittingPhases.contains(dragon.getPhaseManager().getCurrent().getType()) && event.getSource().getSource() instanceof PlayerEntity) {
 			event.setAmount((event.getAmount() - (float) (event.getAmount() * (this.damageRedutionWhenSitting * difficulty))));
 		}
 	}
 
-	private void explosionDamageReduction(LivingDamageEvent event, EnderDragon dragon) {
+	private void explosionDamageReduction(OnLivingHurtEvent event, EnderDragonEntity dragon) {
 		if (this.explosionDamageReduction == 0d)
 			return;
 
-		if (event.getSource().isExplosion() && !event.getSource().getMsgId().equals("fireworks")) {
+		if (event.getSource().isExplosive() && !event.getSource().getName().equals("fireworks")) {
 			event.setAmount((event.getAmount() - (float) (event.getAmount() * this.explosionDamageReduction)));
 		}
 	}

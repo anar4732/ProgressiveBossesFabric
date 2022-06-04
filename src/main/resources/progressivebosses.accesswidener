@@ -1,0 +1,56 @@
+accessWidener v1 named
+
+accessible    field    net/minecraft/entity/mob/MobEntity    experiencePoints    I
+accessible    field    net/minecraft/entity/mob/MobEntity    lootTable    Lnet/minecraft/util/Identifier;
+accessible    field    net/minecraft/entity/boss/WitherEntity    bossBar    Lnet/minecraft/entity/boss/ServerBossBar;
+accessible    field    net/minecraft/entity/boss/dragon/EnderDragonFight    previouslyKilled    Z
+accessible    method   net/minecraft/entity/boss/dragon/phase/PhaseType    register    (Ljava/lang/Class;Ljava/lang/String;)Lnet/minecraft/entity/boss/dragon/phase/PhaseType;
+accessible    field    net/minecraft/entity/ai/goal/GoalSelector    goals    Ljava/util/Set;
+accessible    method   net/minecraft/entity/mob/ShulkerEntity    setPeekAmount    (I)V
+accessible    class    net/minecraft/entity/mob/ShulkerEntity$ShootBulletGoal
+
+accessible    field    net/minecraft/world/explosion/Explosion    power    F
+mutable       field    net/minecraft/world/explosion/Explosion    power    F
+accessible    field    net/minecraft/world/explosion/Explosion    createFire    Z
+mutable       field    net/minecraft/world/explosion/Explosion    createFire    Z
+accessible    field    net/minecraft/world/explosion/Explosion    destructionType    Lnet/minecraft/world/explosion/Explosion$DestructionType;
+mutable       field    net/minecraft/world/explosion/Explosion    destructionType    Lnet/minecraft/world/explosion/Explosion$DestructionType;
+
+accessible    class    net/minecraft/entity/boss/WitherEntity$DescendAtHalfHealthGoal
+accessible    method    net/minecraft/entity/boss/WitherEntity    shootSkullAt    (ILnet/minecraft/entity/LivingEntity;)V
+accessible    method    net/minecraft/entity/boss/WitherEntity    getHeadX    (I)D
+accessible    method    net/minecraft/entity/boss/WitherEntity    getHeadY    (I)D
+accessible    method    net/minecraft/entity/boss/WitherEntity    getHeadZ    (I)D
+accessible    field     net/minecraft/entity/boss/WitherEntity    blockBreakingCooldown    I
+
+accessible    field    net/minecraft/entity/AreaEffectCloudEntity    waitTime    I
+accessible    field    net/minecraft/entity/AreaEffectCloudEntity    duration    I
+accessible    field    net/minecraft/entity/AreaEffectCloudEntity    radiusGrowth    F
+accessible    field    net/minecraft/entity/AreaEffectCloudEntity    affectedEntities    Ljava/util/Map;
+accessible    field    net/minecraft/entity/AreaEffectCloudEntity    potion    Lnet/minecraft/potion/Potion;
+accessible    field    net/minecraft/entity/AreaEffectCloudEntity    effects    Ljava/util/List;
+accessible    field    net/minecraft/entity/AreaEffectCloudEntity    reapplicationDelay    I
+accessible    field    net/minecraft/entity/AreaEffectCloudEntity    radiusOnUse    F
+accessible    field    net/minecraft/entity/AreaEffectCloudEntity    durationOnUse    I
+
+accessible    field    net/minecraft/entity/boss/dragon/phase/HoverPhase    target    Lnet/minecraft/util/math/Vec3d;
+accessible    field    net/minecraft/entity/boss/dragon/phase/AbstractPhase    dragon    Lnet/minecraft/entity/boss/dragon/EnderDragonEntity;
+accessible    field    net/minecraft/entity/boss/dragon/phase/HoldingPatternPhase    path    Lnet/minecraft/entity/ai/pathing/Path;
+
+accessible    method   net/minecraft/entity/projectile/ProjectileEntity <init> (Lnet/minecraft/entity/EntityType;Lnet/minecraft/world/World;)V
+
+accessible    method    net/minecraft/entity/mob/GuardianEntity    setBeamTarget    (I)V
+accessible    class    net/minecraft/entity/mob/GuardianEntity$FireBeamGoal
+
+accessible    field    net/minecraft/entity/mob/MobEntity    goalSelector    Lnet/minecraft/entity/ai/goal/GoalSelector;
+accessible    method    net/minecraft/entity/mob/AbstractSkeletonEntity    getStepSound    ()Lnet/minecraft/sound/SoundEvent;
+accessible    method    net/minecraft/entity/boss/WitherEntity    shootSkullAt    (ILnet/minecraft/entity/LivingEntity;)V
+accessible    method    net/minecraft/entity/boss/WitherEntity    shootSkullAt    (IDDDZ)V
+accessible    field    net/minecraft/world/explosion/Explosion    world    Lnet/minecraft/world/World;
+accessible    field    net/minecraft/world/explosion/Explosion    x    D
+accessible    field    net/minecraft/world/explosion/Explosion    y    D
+accessible    field    net/minecraft/world/explosion/Explosion    z    D
+accessible    field    net/minecraft/entity/mob/MobEntity    targetSelector    Lnet/minecraft/entity/ai/goal/GoalSelector;
+accessible    method    net/minecraft/entity/projectile/ProjectileEntity    onEntityHit    (Lnet/minecraft/util/hit/EntityHitResult;)V
+accessible    method    net/minecraft/entity/projectile/ProjectileEntity    onBlockHit    (Lnet/minecraft/util/hit/BlockHitResult;)V
+accessible    method    net/minecraft/entity/damage/DamageSource    setBypassesArmor    ()Lnet/minecraft/entity/damage/DamageSource;

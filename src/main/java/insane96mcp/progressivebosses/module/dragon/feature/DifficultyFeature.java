@@ -1,103 +1,82 @@
 package insane96mcp.progressivebosses.module.dragon.feature;
 
-import com.google.common.util.concurrent.AtomicDouble;
-import insane96mcp.insanelib.base.Feature;
-import insane96mcp.insanelib.base.Label;
-import insane96mcp.insanelib.base.Module;
-import insane96mcp.insanelib.util.LogHelper;
-import insane96mcp.progressivebosses.capability.Difficulty;
-import insane96mcp.progressivebosses.setup.Config;
-import insane96mcp.progressivebosses.setup.Strings;
-import net.minecraft.Util;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.phys.AABB;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.common.util.concurrent.AtomicDouble;
+
+import insane96mcp.progressivebosses.AComponents;
+import insane96mcp.progressivebosses.utils.DummyEvent;
+import insane96mcp.progressivebosses.utils.IEntityExtraData;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingDeathEvent;
+import insane96mcp.progressivebosses.utils.LogHelper;
+import insane96mcp.progressivebosses.utils.Strings;
+import me.lortseam.completeconfig.api.ConfigEntries;
+import me.lortseam.completeconfig.api.ConfigEntry;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.minecraft.entity.boss.dragon.EnderDragonEntity;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.TranslatableText;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.world.dimension.DimensionType;
+
+@ConfigEntries
 @Label(name = "Difficulty Settings", description = "How difficulty is handled for the Dragon.")
-public class DifficultyFeature extends Feature {
+public class DifficultyFeature implements LabelConfigGroup {
 
-	private final ForgeConfigSpec.ConfigValue<Boolean> sumKilledDragonDifficultyConfig;
-	private final ForgeConfigSpec.ConfigValue<Double> bonusDifficultyPerPlayerConfig;
-	private final ForgeConfigSpec.ConfigValue<Integer> maxDifficultyConfig;
-	private final ForgeConfigSpec.ConfigValue<Integer> startingDifficultyConfig;
-	private final ForgeConfigSpec.ConfigValue<Boolean> showFirstKilledDragonMessageConfig;
-
+	@ConfigEntry(translationKey = "Sum Killed Dragons Difficulty", comment = "If false and there's more than 1 player around the Dragon, difficulty will be the average of all the players' difficulty instead of summing them.")
 	public boolean sumKilledDragonDifficulty = false;
+
+	@ConfigEntry(translationKey = "Bonus Difficulty per Player", comment = "Percentage bonus difficulty added to the Dragon when more than one player is present. Each player past the first one will add this percentage to the difficulty.")
+	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double bonusDifficultyPerPlayer = 0.25d;
+	
+	@ConfigEntry(translationKey = "Max Difficulty", comment = "The Maximum difficulty (times killed) reachable by Ender Dragon. By default is set to 24 because it's the last spawning end gate.")
+	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int maxDifficulty = 8;
+
+	@ConfigEntry(translationKey = "Starting Difficulty", comment = "How much difficulty will players start with when joining a world? Note that this will apply when the player joins the world if the current player difficulty is below this value.")
+	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int startingDifficulty = 0;
+
+	@ConfigEntry(translationKey = "Show First Killed Dragon Message", comment = "Set to false to disable the first Dragon killed message.")
 	public boolean showFirstKilledDragonMessage = true;
 
-	public DifficultyFeature(Module module) {
-		super(Config.builder, module, true, false);
-		this.pushConfig(Config.builder);
-		sumKilledDragonDifficultyConfig = Config.builder
-				.comment("If false and there's more than 1 player around the Dragon, difficulty will be the average of all the players' difficulty instead of summing them.")
-				.define("Sum Killed Dragons Difficulty", sumKilledDragonDifficulty);
-		bonusDifficultyPerPlayerConfig = Config.builder
-				.comment("Percentage bonus difficulty added to the Dragon when more than one player is present. Each player past the first one will add this percentage to the difficulty.")
-				.defineInRange("Bonus Difficulty per Player", this.bonusDifficultyPerPlayer, 0d, Double.MAX_VALUE);
-		maxDifficultyConfig = Config.builder
-				.comment("The Maximum difficulty (times killed) reachable by Ender Dragon. By default is set to 24 because it's the last spawning end gate.")
-				.defineInRange("Max Difficulty", maxDifficulty, 1, Integer.MAX_VALUE);
-		startingDifficultyConfig = Config.builder
-				.comment("How much difficulty will players start with when joining a world? Note that this will apply when the player joins the world if the current player difficulty is below this value.")
-				.defineInRange("Starting Difficulty", startingDifficulty, 0, Integer.MAX_VALUE);
-		this.showFirstKilledDragonMessageConfig = Config.builder
-				.comment("Set to false to disable the first Dragon killed message.")
-				.define("Show First Killed Dragon Message", this.showFirstKilledDragonMessage);
-		Config.builder.pop();
+	public DifficultyFeature(LabelConfigGroup config) {
+		config.addConfigContainer(this);
+		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> this.onSpawn(new DummyEvent(world, entity)));
+		LivingEntityEvents.DEATH.register((event) -> this.onDeath(event));
+		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> this.setPlayerData(new DummyEvent(world, entity)));
 	}
 
-	@Override
-	public void loadConfig() {
-		super.loadConfig();
-		this.sumKilledDragonDifficulty = this.sumKilledDragonDifficultyConfig.get();
-		this.bonusDifficultyPerPlayer = this.bonusDifficultyPerPlayerConfig.get();
-		this.maxDifficulty = this.maxDifficultyConfig.get();
-		this.startingDifficulty = this.startingDifficultyConfig.get();
-		this.showFirstKilledDragonMessage = this.showFirstKilledDragonMessageConfig.get();
-	}
-
-	@SubscribeEvent(priority = EventPriority.HIGH)
-	public void onSpawn(EntityJoinWorldEvent event) {
-		if (event.getWorld().isClientSide)
+	public void onSpawn(DummyEvent event) {
+		if (event.getWorld().isClient)
 			return;
 
-		if (!this.isEnabled())
+		// if (!event.getWorld().getRegistryKey().getValue().equals(DimensionType.THE_END_REGISTRY_KEY.getValue()))
+		// 	return;
+
+		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
 			return;
 
-		//What could go wrong?
-		//if (!event.getWorld().dimension().location().equals(DimensionType.END_LOCATION.location()))
-		//	return;
-
-		if (!(event.getEntity() instanceof EnderDragon dragon))
+		if (dragon.getFight() == null)
 			return;
 
-		if (dragon.getDragonFight() == null)
-			return;
-
-		CompoundTag dragonTags = dragon.getPersistentData();
+		NbtCompound dragonTags = ((IEntityExtraData) dragon).getPersistentData();
 		if (dragonTags.contains(Strings.Tags.DIFFICULTY))
 			return;
 
 		int radius = 256;
 		BlockPos pos1 = new BlockPos(-radius, -radius, -radius);
 		BlockPos pos2 = new BlockPos(radius, radius, radius);
-		AABB bb = new AABB(pos1, pos2);
+		Box bb = new Box(pos1, pos2);
 
-		List<ServerPlayer> players = event.getWorld().getEntitiesOfClass(ServerPlayer.class, bb);
+		List<ServerPlayerEntity> players = event.getWorld().getEntitiesByClass(ServerPlayerEntity.class, bb, (entity) -> true);
 
 		if (players.size() == 0)
 			return;
@@ -105,8 +84,8 @@ public class DifficultyFeature extends Feature {
 		AtomicInteger playersFirstDragon = new AtomicInteger(0);
 		final AtomicDouble dragonDifficulty = new AtomicDouble(0d);
 
-		for (ServerPlayer player : players) {
-			player.getCapability(Difficulty.INSTANCE).ifPresent(difficulty -> {
+		for (ServerPlayerEntity player : players) {
+			AComponents.DF.maybeGet(player).ifPresent(difficulty -> {
 				dragonDifficulty.addAndGet(difficulty.getKilledDragons());
 				if (difficulty.getFirstDragon() == (byte) 1) {
 					playersFirstDragon.incrementAndGet();
@@ -127,51 +106,43 @@ public class DifficultyFeature extends Feature {
 	}
 
 	//Increase Player Difficulty
-	@SubscribeEvent
-	public void onDeath(LivingDeathEvent event) {
-		if (event.getEntity().level.isClientSide)
+	public void onDeath(OnLivingDeathEvent event) {
+		if (event.getEntity().world.isClient)
 			return;
 
-		if (!this.isEnabled())
-			return;
-
-		if (!(event.getEntity() instanceof EnderDragon dragon))
+		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
 			return;
 
 		int radius = 256;
 		BlockPos pos1 = new BlockPos(-radius, -radius, -radius);
 		BlockPos pos2 = new BlockPos(radius, radius, radius);
-		AABB bb = new AABB(pos1, pos2);
+		Box bb = new Box(pos1, pos2);
 
-		List<ServerPlayer> players = dragon.level.getEntitiesOfClass(ServerPlayer.class, bb);
+		List<ServerPlayerEntity> players = dragon.world.getNonSpectatingEntities(ServerPlayerEntity.class, bb);
 		//If no players are found in the "Spawn Radius Player Check", try to get the nearest player
 		if (players.size() == 0) {
-			ServerPlayer nearestPlayer = (ServerPlayer) dragon.level.getNearestPlayer(dragon.getX(), dragon.getY(), dragon.getZ(), Double.MAX_VALUE, true);
+			ServerPlayerEntity nearestPlayer = (ServerPlayerEntity) dragon.world.getClosestPlayer(dragon.getX(), dragon.getY(), dragon.getZ(), Double.MAX_VALUE, true);
 			players.add(nearestPlayer);
 		}
 
-		for (ServerPlayer player : players) {
-			player.getCapability(Difficulty.INSTANCE).ifPresent(difficulty -> {
+		for (ServerPlayerEntity player : players) {
+			AComponents.DF.maybeGet(player).ifPresent(difficulty -> {
 				if (difficulty.getKilledDragons() <= this.startingDifficulty && this.showFirstKilledDragonMessage)
-					player.sendMessage(new TranslatableComponent(Strings.Translatable.FIRST_DRAGON_KILL), Util.NIL_UUID);
+					player.sendMessage(new TranslatableText(Strings.Translatable.FIRST_DRAGON_KILL), true);
 				if (difficulty.getKilledDragons() < this.maxDifficulty)
 					difficulty.addKilledDragons(1);
 			});
 		}
 	}
 
-	@SubscribeEvent(priority = EventPriority.HIGHEST)
-	public void setPlayerData(EntityJoinWorldEvent event) {
-		if (event.getWorld().isClientSide)
+	public void setPlayerData(DummyEvent event) {
+		if (event.getWorld().isClient)
 			return;
 
-		if (!this.isEnabled())
+		if (!(event.getEntity() instanceof ServerPlayerEntity player))
 			return;
 
-		if (!(event.getEntity() instanceof ServerPlayer player))
-			return;
-
-		player.getCapability(Difficulty.INSTANCE).ifPresent(difficulty -> {
+		AComponents.DF.maybeGet(player).ifPresent(difficulty -> {
 			if (difficulty.getKilledDragons() < this.startingDifficulty) {
 				difficulty.setKilledDragons(this.startingDifficulty);
 				LogHelper.info("[Progressive Bosses] %s killed dragons counter was below the set 'Starting Difficulty', Has been increased to match 'Starting Difficulty'", player.getName().getString());

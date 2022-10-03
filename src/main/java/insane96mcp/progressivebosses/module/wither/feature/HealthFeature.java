@@ -15,19 +15,19 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.nbt.NbtCompound;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Health", description = "Bonus Health and Bonus regeneration. The feature even fixes the Wither health bar not updating on spawn.")
 public class HealthFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Health Bonus per Difficulty", comment = "Increase Wither's Health by this value per difficulty")
+	@ConfigEntry(nameKey = "Health Bonus per Difficulty", comment = "Increase Wither's Health by this value per difficulty")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double bonusPerDifficulty = 90d;
 
-	@ConfigEntry(translationKey = "Maximum Bonus Regeneration", comment = "Maximum bonus regeneration per second given by \"Bonus Regeneration per Difficulty\". Set to 0 to disable bonus health regeneration. This doesn't affect the natural regeneration of the Wither (1 Health per Second). Note that the health regen is disabled when Wither's health is between 49% and 50% to prevent making it impossible to approach when half health.")
+	@ConfigEntry(nameKey = "Maximum Bonus Regeneration", comment = "Maximum bonus regeneration per second given by \"Bonus Regeneration per Difficulty\". Set to 0 to disable bonus health regeneration. This doesn't affect the natural regeneration of the Wither (1 Health per Second). Note that the health regen is disabled when Wither's health is between 49% and 50% to prevent making it impossible to approach when half health.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double maxBonusRegen = 2d;
 
-	@ConfigEntry(translationKey = "Bonus Regeneration per Difficulty", comment = "How many half hearts will the Wither regen per difficulty. This is added to the natural regeneration of the Wither (1 Health per Second).")
+	@ConfigEntry(nameKey = "Bonus Regeneration per Difficulty", comment = "How many half hearts will the Wither regen per difficulty. This is added to the natural regeneration of the Wither (1 Health per Second).")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double bonusRegenPerDifficulty = 0.3d;
 

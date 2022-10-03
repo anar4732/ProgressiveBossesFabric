@@ -28,42 +28,42 @@ import net.minecraft.entity.projectile.WitherSkullEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Attack", description = "Makes the Wither smarter (will no longer try to stand on the player's head ...), attack faster and hit harder")
 public class AttackFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Wither Attack", comment = "Makes the Wither smarter (will no longer try to stand on the player's head ...), attack faster and hit harder")
+	@ConfigEntry(nameKey = "Wither Attack", comment = "Makes the Wither smarter (will no longer try to stand on the player's head ...), attack faster and hit harder")
 	public boolean applyToVanillaWither = true;
 
-	@ConfigEntry(translationKey = "Max Charge Attack Chance", comment = "Chance every time the Wither takes damage to start a charge attack. Less health = higher chance and more damage taken = more chance. This value is the chance at 0% health and when taking 10 damage.")
+	@ConfigEntry(nameKey = "Max Charge Attack Chance", comment = "Chance every time the Wither takes damage to start a charge attack. Less health = higher chance and more damage taken = more chance. This value is the chance at 0% health and when taking 10 damage.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double maxChargeAttackChance = 0.06d;
 
-	@ConfigEntry(translationKey = "Increased Damage", comment = "Percentage bonus damage dealt by the Wither per difficulty.")
+	@ConfigEntry(nameKey = "Increased Damage", comment = "Percentage bonus damage dealt by the Wither per difficulty.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double increasedDamage = 0.12d;
 
-	@ConfigEntry(translationKey = "Barrage Attack", comment = "Chance (per difficulty) every time the Wither takes damage to start a barrage attack. Less health = higher chance and more damage taken = more chance. This value is the chance at 0% health and when taking 10 damage.")
+	@ConfigEntry(nameKey = "Barrage Attack", comment = "Chance (per difficulty) every time the Wither takes damage to start a barrage attack. Less health = higher chance and more damage taken = more chance. This value is the chance at 0% health and when taking 10 damage.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double maxBarrageChancePerDiff = 0.011d;
 
-	@ConfigEntry(translationKey = "Min Barrage Duration", comment = "Min time (in ticks) for the duration of the barrage attack. Less health = longer barrage.")
+	@ConfigEntry(nameKey = "Min Barrage Duration", comment = "Min time (in ticks) for the duration of the barrage attack. Less health = longer barrage.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int minBarrageDuration = 20;
 
-	@ConfigEntry(translationKey = "Max Barrage Duration", comment = "Max time (in ticks) for the duration of the barrage attack. Less health = longer barrage")
+	@ConfigEntry(nameKey = "Max Barrage Duration", comment = "Max time (in ticks) for the duration of the barrage attack. Less health = longer barrage")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int maxBarrageDuration = 150;
 
-	@ConfigEntry(translationKey = "Skulls", comment = "Wither Skull Changes")
+	@ConfigEntry(nameKey = "Skulls", comment = "Wither Skull Changes")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double skullVelocityMultiplier = 2.75d;
 
-	@ConfigEntry(translationKey = "Attack Speed", comment = "Attack Speed Changes")
+	@ConfigEntry(nameKey = "Attack Speed", comment = "Attack Speed Changes")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int attackInterval = 40;
 
-	@ConfigEntry(translationKey = "Increase Attack Speed when Near", comment = "The middle head will attack faster (up to 40% of the attack speed) the nearer the target is to the Wither.")
+	@ConfigEntry(nameKey = "Increase Attack Speed when Near", comment = "The middle head will attack faster (up to 40% of the attack speed) the nearer the target is to the Wither.")
 	public boolean increaseAttackSpeedWhenNear = true;
 
 	public AttackFeature(LabelConfigGroup parent) {

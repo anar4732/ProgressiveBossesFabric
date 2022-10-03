@@ -38,65 +38,65 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Minions", description = "Wither will spawn deadly Minions")
 public class MinionFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Minion at Difficulty", comment = "At which difficulty the Wither starts spawning Minions")
+	@ConfigEntry(nameKey = "Minion at Difficulty", comment = "At which difficulty the Wither starts spawning Minions")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int minionAtDifficulty = 1;
 
-	@ConfigEntry(translationKey = "Bonus Minion Every Difficulty", comment = "As the Wither starts spawning Minions, every how much difficulty the Wither will spawn one more Minion")
+	@ConfigEntry(nameKey = "Bonus Minion Every Difficulty", comment = "As the Wither starts spawning Minions, every how much difficulty the Wither will spawn one more Minion")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int bonusMinionEveryDifficulty = 1;
 
-	@ConfigEntry(translationKey = "Max Minions Spawned", comment = "Maximum Minions spawned by the Wither")
+	@ConfigEntry(nameKey = "Max Minions Spawned", comment = "Maximum Minions spawned by the Wither")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int maxSpawned = 6;
 
-	@ConfigEntry(translationKey = "Max Minions Around", comment = "Maximum amount of Minions that can be around the Wither in a 16 block radius. After this number is reached the Wither will stop spawning minions. Set to 0 to disable this check")
+	@ConfigEntry(nameKey = "Max Minions Around", comment = "Maximum amount of Minions that can be around the Wither in a 16 block radius. After this number is reached the Wither will stop spawning minions. Set to 0 to disable this check")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int maxAround = 18;
 
-	@ConfigEntry(translationKey = "Minimum Cooldown", comment = "Minimum ticks (20 ticks = 1 seconds) after Minions can spwan.")
+	@ConfigEntry(nameKey = "Minimum Cooldown", comment = "Minimum ticks (20 ticks = 1 seconds) after Minions can spwan.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int minCooldown = 400;
 
-	@ConfigEntry(translationKey = "Maximum Cooldown", comment = "Maximum ticks (20 ticks = 1 seconds) after Minions can spwan.")
+	@ConfigEntry(nameKey = "Maximum Cooldown", comment = "Maximum ticks (20 ticks = 1 seconds) after Minions can spwan.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int maxCooldown = 700;
 
-	@ConfigEntry(translationKey = "Cooldown Multiplier Below Half Health", comment = "Min and Max cooldowns are multiplied by this value when the Wither drops below half health. Set to 1 to not change the cooldown when the wither's health drops below half.")
+	@ConfigEntry(nameKey = "Cooldown Multiplier Below Half Health", comment = "Min and Max cooldowns are multiplied by this value when the Wither drops below half health. Set to 1 to not change the cooldown when the wither's health drops below half.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double cooldownMultiplierBelowHalfHealth = 0.6d;
 
-	@ConfigEntry(translationKey = "Bonus Movement Speed Per Difficulty", comment = "Percentage bonus speed per difficulty. (0.01 means 1%)")
+	@ConfigEntry(nameKey = "Bonus Movement Speed Per Difficulty", comment = "Percentage bonus speed per difficulty. (0.01 means 1%)")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double bonusSpeedPerDifficulty = 0.03d;
 
-	@ConfigEntry(translationKey = "Magic Damage Multiplier", comment = "Wither Minions will take magic damage multiplied by this value.")
+	@ConfigEntry(nameKey = "Magic Damage Multiplier", comment = "Wither Minions will take magic damage multiplied by this value.")
 	@ConfigEntry.BoundedDouble(min = 0, max = Double.MAX_VALUE)
 	public double magicDamageMultiplier = 3.0d;
 
-	@ConfigEntry(translationKey = "Kill Minions on Wither Death", comment = "Wither Minions will die when the Wither that spawned them dies.")
+	@ConfigEntry(nameKey = "Kill Minions on Wither Death", comment = "Wither Minions will die when the Wither that spawned them dies.")
 	public boolean killMinionOnWitherDeath = true;
 
-	@ConfigEntry(translationKey = "Has Sword", comment = "Wither Minions will spawn with a Stone Sword")
+	@ConfigEntry(nameKey = "Has Sword", comment = "Wither Minions will spawn with a Stone Sword")
 	public boolean hasSword = true;
 
-	@ConfigEntry(translationKey = "Bow Chance Over Half Health", comment = "Chance for the Wither Minion to spawn with a bow when Wither's above Half Health")
+	@ConfigEntry(nameKey = "Bow Chance Over Half Health", comment = "Chance for the Wither Minion to spawn with a bow when Wither's above Half Health")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double preHalfHealthBowChance = 0.6d;
 
-	@ConfigEntry(translationKey = "Bow Chance Below Half Health", comment = "Chance for the Wither Minion to spawn with a bow when Wither's below Half Health")
+	@ConfigEntry(nameKey = "Bow Chance Below Half Health", comment = "Chance for the Wither Minion to spawn with a bow when Wither's below Half Health")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double halfHealthBowChance = 0.08d;
 
-	@ConfigEntry(translationKey = "Power / Sharpness Chance", comment = "Chance (per difficulty) for the Wither Minion Sword / Bow to be enchanted with Sharpness / Power. Note that every 100% chance adds one guaranteed level of the enchantment, while the remaining chance dictates if one more level will be added.")
+	@ConfigEntry(nameKey = "Power / Sharpness Chance", comment = "Chance (per difficulty) for the Wither Minion Sword / Bow to be enchanted with Sharpness / Power. Note that every 100% chance adds one guaranteed level of the enchantment, while the remaining chance dictates if one more level will be added.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double powerSharpnessChance = 0.6d;
 
-	@ConfigEntry(translationKey = "Punch / Knockback Chance", comment = "Chance (per difficulty) for the Wither Minion Sword / Bow to be enchanted with Knockback / Punch. Note that every 100% chance adds one guaranteed level of the enchantment, while the remaining chance dictates if one more level will be added.")
+	@ConfigEntry(nameKey = "Punch / Knockback Chance", comment = "Chance (per difficulty) for the Wither Minion Sword / Bow to be enchanted with Knockback / Punch. Note that every 100% chance adds one guaranteed level of the enchantment, while the remaining chance dictates if one more level will be added.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double punchKnockbackChance = 0.3d;
 

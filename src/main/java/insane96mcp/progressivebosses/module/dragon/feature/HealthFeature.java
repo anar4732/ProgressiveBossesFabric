@@ -16,23 +16,23 @@ import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.boss.dragon.phase.PhaseType;
 import net.minecraft.nbt.NbtCompound;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Health", description = "Bonus Health and Bonus regeneration.")
 public class HealthFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Health Bonus per Difficulty", comment = "Increase Ender Dragon's Health by this value per difficulty")
+	@ConfigEntry(nameKey = "Health Bonus per Difficulty", comment = "Increase Ender Dragon's Health by this value per difficulty")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double bonusPerDifficulty = 25d;
 
-	@ConfigEntry(translationKey = "Maximum Bonus Regeneration", comment = "Maximum bonus regeneration per second given by \"Bonus Regeneration per Difficulty\". Set to 0 to disable bonus health regeneration. This doesn't affect the crystal regeneration of the Ender Dragon.")
+	@ConfigEntry(nameKey = "Maximum Bonus Regeneration", comment = "Maximum bonus regeneration per second given by \"Bonus Regeneration per Difficulty\". Set to 0 to disable bonus health regeneration. This doesn't affect the crystal regeneration of the Ender Dragon.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double maxBonusRegen = 1.0d;
 
-	@ConfigEntry(translationKey = "Bonus Regeneration per Difficulty", comment = "How much health will the Ender Dragon regen per difficulty. This is added to the noaml Crystal regeneration.")
+	@ConfigEntry(nameKey = "Bonus Regeneration per Difficulty", comment = "How much health will the Ender Dragon regen per difficulty. This is added to the noaml Crystal regeneration.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double bonusRegenPerDifficulty = 0.125d;
 
-	@ConfigEntry(translationKey = "Bonus Crystal Regeneration", comment = "How much health (when missing 100% health) will the Ender Dragon regen per difficulty each second whenever she's attached to a Crystal. So if she's missing 30% health, this will be 30% effective. This is added to the normal Crystal regen.")
+	@ConfigEntry(nameKey = "Bonus Crystal Regeneration", comment = "How much health (when missing 100% health) will the Ender Dragon regen per difficulty each second whenever she's attached to a Crystal. So if she's missing 30% health, this will be 30% effective. This is added to the normal Crystal regen.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double bonusCrystalRegen = 0d;
 

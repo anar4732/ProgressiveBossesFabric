@@ -23,29 +23,30 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.dimension.DimensionTypes;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Misc", description = "Handles various small features, such as the explosion")
 public class MiscFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Explosion Power Bonus", comment = "How much explosion power (after the invulnerability) will the Wither gain for each difficulty point. Explosion Radius is capped to 13. Base Wither Explosion Power is 7.0. Setting this to 0 will not increase the Wither Explosion Power.")
+	@ConfigEntry(nameKey = "Explosion Power Bonus", comment = "How much explosion power (after the invulnerability) will the Wither gain for each difficulty point. Explosion Radius is capped to 13. Base Wither Explosion Power is 7.0. Setting this to 0 will not increase the Wither Explosion Power.")
 	@ConfigEntry.BoundedDouble(min = 0, max = 4d)
 	public double explosionPowerBonus = 1d;
 
-	@ConfigEntry(translationKey = "Explosion Causes Fire at Difficulty", comment = "At this difficulty the Wither Explosion will cause fire. Set to -1 to disable.")
+	@ConfigEntry(nameKey = "Explosion Causes Fire at Difficulty", comment = "At this difficulty the Wither Explosion will cause fire. Set to -1 to disable.")
 	@ConfigEntry.BoundedInteger(min = -1, max = Integer.MAX_VALUE)
 	public int explosionCausesFireAtDifficulty = 5;
 
-	@ConfigEntry(translationKey = "Faster Breaking Blocks", comment = "The Wither will no longer wait 1.0 seconds before breaking blocks when he's hit, instead just 0.5s")
+	@ConfigEntry(nameKey = "Faster Breaking Blocks", comment = "The Wither will no longer wait 1.0 seconds before breaking blocks when he's hit, instead just 0.5s")
 	public boolean fasterBlockBreaking = true;
 
-	@ConfigEntry(translationKey = "Bigger Breaking Blocks", comment = "The Wither will break even blocks below him when hit.")
+	@ConfigEntry(nameKey = "Bigger Breaking Blocks", comment = "The Wither will break even blocks below him when hit.")
 	public boolean biggerBlockBreaking = true;
 
-	@ConfigEntry(translationKey = "Ignore Witherproof Blocks", comment = "If true the Wither will break even blocks that are witherproof. Unbreakable blocks will still be unbreakable, so it's really useful with other mods as in vanilla Wither Proof Blocks are all the unbreakable blocks.")
+	@ConfigEntry(nameKey = "Ignore Witherproof Blocks", comment = "If true the Wither will break even blocks that are witherproof. Unbreakable blocks will still be unbreakable, so it's really useful with other mods as in vanilla Wither Proof Blocks are all the unbreakable blocks.")
 	public boolean ignoreWitherProofBlocks = false;
 
-	@ConfigEntry(translationKey = "Wither Nether Only", comment = "The wither can only be spawned in the Nether.\nNote that this feature completely disables Wither Skulls from begin placed nearby Soul Sand when not in the Nether or when on the Nether Roof.\nRequires Minecraft restart.")
+	@ConfigEntry(nameKey = "Wither Nether Only", comment = "The wither can only be spawned in the Nether.\nNote that this feature completely disables Wither Skulls from begin placed nearby Soul Sand when not in the Nether or when on the Nether Roof.\nRequires Minecraft restart.")
 	public boolean witherNetherOnly = false;
 
 	@ConfigEntries.Exclude
@@ -180,7 +181,7 @@ public class MiscFeature implements LabelConfigGroup {
 	 * Returns true if at the specified position a Wither Skull can be placed
 	 */
 	public static boolean canPlaceSkull(World world, BlockPos pos) {
-		boolean isNether = world.getRegistryKey().getValue().equals(DimensionType.THE_NETHER_REGISTRY_KEY.getValue());
+		boolean isNether = world.getRegistryKey().getValue().equals(DimensionTypes.THE_NETHER_ID);
 
 		boolean hasSoulSandNearby = false;
 		for (Direction dir : Direction.values()) {

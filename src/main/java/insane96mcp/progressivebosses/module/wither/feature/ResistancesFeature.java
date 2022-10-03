@@ -11,27 +11,27 @@ import me.lortseam.completeconfig.api.ConfigEntry;
 import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.nbt.NbtCompound;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Resistances & Vulnerabilities", description = "Handles the Damage Resistances and Vulnerabilities")
 public class ResistancesFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Melee Damage reduction per Difficulty above half health", comment = "Percentage Melee Damage Reduction (per difficulty) while the Wither is above half health.")
+	@ConfigEntry(nameKey = "Melee Damage reduction per Difficulty above half health", comment = "Percentage Melee Damage Reduction (per difficulty) while the Wither is above half health.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double meleeDamageReductionBeforeHalfHealth = 0.03d;
 
-	@ConfigEntry(translationKey = "Max Melee Damage reduction per Difficulty before half health", comment = "Cap for 'Melee Damage reduction per Difficulty above half health'")
+	@ConfigEntry(nameKey = "Max Melee Damage reduction per Difficulty before half health", comment = "Cap for 'Melee Damage reduction per Difficulty above half health'")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double maxMeleeDamageReductionBeforeHalfHealth = 0.24d;
 
-	@ConfigEntry(translationKey = "Melee Damage reduction per Difficulty below half health", comment = "Percentage Melee Damage Reduction (per difficulty) as the Wither drops below half health.")
+	@ConfigEntry(nameKey = "Melee Damage reduction per Difficulty below half health", comment = "Percentage Melee Damage Reduction (per difficulty) as the Wither drops below half health.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double meleeDamageReductionOnHalfHealth = 0.06d;
 
-	@ConfigEntry(translationKey = "Max Melee Damage reduction per Difficulty below half health", comment = "Cap for 'Melee Damage Reduction per Difficulty below half health'")
+	@ConfigEntry(nameKey = "Max Melee Damage reduction per Difficulty below half health", comment = "Cap for 'Melee Damage Reduction per Difficulty below half health'")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double maxDamageReductionOnHalfHealth = 0.48d;
 
-	@ConfigEntry(translationKey = "Magic Damage Bonus", comment = "Bonus magic damage based off missing health. 150 means that every 150 missing health the damage will be amplified by 100%. E.g. The difficulty = 0 Wither (with 300 max health) is at half health (so it's missing 150hp), on magic damage he will receive 'magic_damage * (missing_health / magic_damage_bonus + 1)' = 'magic_damage * (150 / 150 + 1)' = 'magic_damage * 2'.")
+	@ConfigEntry(nameKey = "Magic Damage Bonus", comment = "Bonus magic damage based off missing health. 150 means that every 150 missing health the damage will be amplified by 100%. E.g. The difficulty = 0 Wither (with 300 max health) is at half health (so it's missing 150hp), on magic damage he will receive 'magic_damage * (missing_health / magic_damage_bonus + 1)' = 'magic_damage * (150 / 150 + 1)' = 'magic_damage * 2'.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1024f)
 	public double magicDamageBonus = 250d;
 

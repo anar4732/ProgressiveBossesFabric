@@ -32,7 +32,8 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
@@ -40,35 +41,35 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.EndPortalFeature;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Minions", description = "Shulkers that will make you float around.")
 public class MinionFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Minion at Difficulty", comment = "At which difficulty the Ender Dragon starts spawning Minions")
+	@ConfigEntry(nameKey = "Minion at Difficulty", comment = "At which difficulty the Ender Dragon starts spawning Minions")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int minionAtDifficulty = 1;
 
-	@ConfigEntry(translationKey = "Minimum Cooldown", comment = "Minimum ticks (20 ticks = 1 seconds) after Minions can spwan.")
+	@ConfigEntry(nameKey = "Minimum Cooldown", comment = "Minimum ticks (20 ticks = 1 seconds) after Minions can spwan.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int minCooldown = 1400;
 
-	@ConfigEntry(translationKey = "Maximum Cooldown", comment = "Maximum ticks (20 ticks = 1 seconds) after Minions can spwan.")
+	@ConfigEntry(nameKey = "Maximum Cooldown", comment = "Maximum ticks (20 ticks = 1 seconds) after Minions can spwan.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int maxCooldown = 2000;
 
-	@ConfigEntry(translationKey = "Cooldown Reduction", comment = "Percentage cooldown reduction per difficulty for the cooldown of Minion spawning.")
+	@ConfigEntry(nameKey = "Cooldown Reduction", comment = "Percentage cooldown reduction per difficulty for the cooldown of Minion spawning.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double cooldownReduction = 0.05d;
 
-	@ConfigEntry(translationKey = "Blinding Chance", comment = "Percentage chance per difficulty for a Minion to spawn as a Blinding Minion.")
+	@ConfigEntry(nameKey = "Blinding Chance", comment = "Percentage chance per difficulty for a Minion to spawn as a Blinding Minion.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double blindingChance = 0.05d;
 
-	@ConfigEntry(translationKey = "Blinding duration", comment = "Time (in ticks) for the bliding effect when hit by a blinding bullet.")
+	@ConfigEntry(nameKey = "Blinding duration", comment = "Time (in ticks) for the bliding effect when hit by a blinding bullet.")
 	@ConfigEntry.BoundedInteger(min = 0, max = 6000)
 	public int blindingDuration = 150;
 
-	@ConfigEntry(translationKey = "Reduced Dragon Damage", comment = "If true, Dragon Minions will take only 10% damage from the Ender Dragon.")
+	@ConfigEntry(nameKey = "Reduced Dragon Damage", comment = "If true, Dragon Minions will take only 10% damage from the Ender Dragon.")
 	public boolean reducedDragonDamage = true;
 
 	public MinionFeature(LabelConfigGroup parent) {
@@ -189,7 +190,7 @@ public class MinionFeature implements LabelConfigGroup {
 		boolean isBlindingMinion = world.getRandom().nextDouble() < this.blindingChance * difficulty;
 
 		shulker.setPosition(pos.x, pos.y, pos.z);
-		shulker.setCustomName(new TranslatableText(Strings.Translatable.DRAGON_MINION));
+		shulker.setCustomName(MutableText.of(new TranslatableTextContent(Strings.Translatable.DRAGON_MINION)));
 		shulker.lootTable = LootTables.EMPTY;
 		shulker.setPersistent();
 		DragonMinionHelper.setMinionColor(shulker, isBlindingMinion);

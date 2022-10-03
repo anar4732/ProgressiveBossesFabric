@@ -15,19 +15,19 @@ import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.entity.mob.ElderGuardianEntity;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Rewards", description = "Bonus Experience and Dragon Egg per player")
 public class RewardFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Base Experience", comment = "How much experience will an Elder Guardian drop.")
+	@ConfigEntry(nameKey = "Base Experience", comment = "How much experience will an Elder Guardian drop.")
 	@ConfigEntry.BoundedInteger(min = 0, max = 1024)
 	public int baseExperience = 40;
 
-	@ConfigEntry(translationKey = "Bonus Experience", comment = "How much more experience (percentage) will Elder Guardian drop per killed Elder Guardian. The percentage is additive (e.g. with this set to 100%, the last Elder will drop 200% more experience)")
+	@ConfigEntry(nameKey = "Bonus Experience", comment = "How much more experience (percentage) will Elder Guardian drop per killed Elder Guardian. The percentage is additive (e.g. with this set to 100%, the last Elder will drop 200% more experience)")
 	@ConfigEntry.BoundedDouble(min = 0.0, max = Double.MAX_VALUE)
 	public double bonusExperience = 1.0d;
 
-	@ConfigEntry(translationKey = "Drops", comment = "A list of bonus drops for the Elder Guardian. Entry format: item,amount,missing_guardians,chance,mode,chance_mode\n" +
+	@ConfigEntry(nameKey = "Drops", comment = "A list of bonus drops for the Elder Guardian. Entry format: item,amount,missing_guardians,chance,mode,chance_mode\n" +
 			"item: item id\n" +
 			"amount: amount\n" +
 			"missing_guardians: the amount of missing guardians required for the item to drop, works differently based on mode\n" +

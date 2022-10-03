@@ -1,6 +1,6 @@
 package insane96mcp.progressivebosses.utils;
 
-import java.util.Random;
+import net.minecraft.util.math.random.Random;
 
 public class Utils {
 	/**

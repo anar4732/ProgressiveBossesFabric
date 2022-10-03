@@ -40,38 +40,38 @@ import net.minecraft.world.explosion.Explosion;
 import net.minecraft.world.gen.feature.EndPortalFeature;
 import net.minecraft.world.gen.feature.EndSpikeFeature;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Crystals", description = "Makes more Crystal spawn and with more cages.")
 public class CrystalFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "More Cages at Difficulty", comment = "At this difficulty cages will start to appear around other crystals too. -1 will disable this feature.")
+	@ConfigEntry(nameKey = "More Cages at Difficulty", comment = "At this difficulty cages will start to appear around other crystals too. -1 will disable this feature.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int moreCagesAtDifficulty = 1;
 
-	@ConfigEntry(translationKey = "Max Bonus Cages", comment = "Max number of bonus cages that can spawn around the crystals.")
+	@ConfigEntry(nameKey = "Max Bonus Cages", comment = "Max number of bonus cages that can spawn around the crystals.")
 	@ConfigEntry.BoundedInteger(min = 0, max = 8)
 	public int maxBonusCages = 6;
 
-	@ConfigEntry(translationKey = "More Crystals at Difficulty", comment = "At this difficulty one crystal will start to appear inside obsidian towers. -1 will disable this feature.")
+	@ConfigEntry(nameKey = "More Crystals at Difficulty", comment = "At this difficulty one crystal will start to appear inside obsidian towers. -1 will disable this feature.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int moreCrystalsAtDifficulty = 2;
 
-	@ConfigEntry(translationKey = "More Crystals Step", comment = "Every how much difficulty one more crystal will be spawned inside towers")
+	@ConfigEntry(nameKey = "More Crystals Step", comment = "Every how much difficulty one more crystal will be spawned inside towers")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int moreCrystalsStep = 3;
 
-	@ConfigEntry(translationKey = "More Crystals Max", comment = "Max number of bonus crystals that can spawn inside the towers.")
+	@ConfigEntry(nameKey = "More Crystals Max", comment = "Max number of bonus crystals that can spawn inside the towers.")
 	@ConfigEntry.BoundedInteger(min = 0, max = 10)
 	public int moreCrystalsMax = 3;
 
-	@ConfigEntry(translationKey = "Enable crystal respawn", comment = "Everytime the dragon is hit (when below 50% of health) there's a chance to to trigger a Crystal respawn Phase. The chance is 0% when health >=50% and 100% when health <=30%, the health threshold decreases by 20% every time the dragon respawns crystals.")
+	@ConfigEntry(nameKey = "Enable crystal respawn", comment = "Everytime the dragon is hit (when below 50% of health) there's a chance to to trigger a Crystal respawn Phase. The chance is 0% when health >=50% and 100% when health <=30%, the health threshold decreases by 20% every time the dragon respawns crystals.")
 	public boolean enableCrystalRespawn = true;
 
-	@ConfigEntry(translationKey = "Crystal Respawn Per Difficulty", comment = "Difficulty multiplied by this number will output how many crystals will the dragon respawn.")
+	@ConfigEntry(nameKey = "Crystal Respawn Per Difficulty", comment = "Difficulty multiplied by this number will output how many crystals will the dragon respawn.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 10d)
 	public double crystalRespawnPerDifficulty = 0.375d;
 
-	@ConfigEntry(translationKey = "Explosion Immune", comment = "Crystals can no longer be destroyed by other explosions.")
+	@ConfigEntry(nameKey = "Explosion Immune", comment = "Crystals can no longer be destroyed by other explosions.")
 	public boolean explosionImmune = true;
 
 	public CrystalFeature(LabelConfigGroup parent) {

@@ -8,15 +8,15 @@ import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.minecraft.entity.mob.ElderGuardianEntity;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Attack", description = "More damage and attack speed based off Elder Guardians Defeated")
 public class AttackFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Bonus Damage per Elder Guardian Defeated", comment = "Percentage Bonus damage per defeated Elder Guardian.")
+	@ConfigEntry(nameKey = "Bonus Damage per Elder Guardian Defeated", comment = "Percentage Bonus damage per defeated Elder Guardian.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 128d)
 	public double bonusDamage = 0d;
 
-	@ConfigEntry(translationKey = "Attack Duration Reduction per Elder Guardian Defeated", comment = "How many ticks faster will Elder Guardian attack (multiplied by defeated Elder Guardians). Vanilla Attack Duration is 60 ticks (3 secs)")
+	@ConfigEntry(nameKey = "Attack Duration Reduction per Elder Guardian Defeated", comment = "How many ticks faster will Elder Guardian attack (multiplied by defeated Elder Guardians). Vanilla Attack Duration is 60 ticks (3 secs)")
 	@ConfigEntry.BoundedInteger(min = 0, max = 60)
 	public int attackDurationReduction = 25;
 

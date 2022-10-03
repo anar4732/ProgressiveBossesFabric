@@ -8,11 +8,11 @@ import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.minecraft.entity.mob.ElderGuardianEntity;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Resistances", description = "Handles the Damage Resistances")
 public class ResistancesFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Damage Reduction per Elder Guardian Defeated", comment = "Percentage Damage Reduction for each Elder Guardian Defeated.")
+	@ConfigEntry(nameKey = "Damage Reduction per Elder Guardian Defeated", comment = "Percentage Damage Reduction for each Elder Guardian Defeated.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double resistancePerElderGuardianDefeated = 0.3d;
 

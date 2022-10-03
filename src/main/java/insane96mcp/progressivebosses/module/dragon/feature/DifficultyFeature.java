@@ -20,31 +20,31 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
-import net.minecraft.world.dimension.DimensionType;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Difficulty Settings", description = "How difficulty is handled for the Dragon.")
 public class DifficultyFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Sum Killed Dragons Difficulty", comment = "If false and there's more than 1 player around the Dragon, difficulty will be the average of all the players' difficulty instead of summing them.")
+	@ConfigEntry(nameKey = "Sum Killed Dragons Difficulty", comment = "If false and there's more than 1 player around the Dragon, difficulty will be the average of all the players' difficulty instead of summing them.")
 	public boolean sumKilledDragonDifficulty = false;
 
-	@ConfigEntry(translationKey = "Bonus Difficulty per Player", comment = "Percentage bonus difficulty added to the Dragon when more than one player is present. Each player past the first one will add this percentage to the difficulty.")
+	@ConfigEntry(nameKey = "Bonus Difficulty per Player", comment = "Percentage bonus difficulty added to the Dragon when more than one player is present. Each player past the first one will add this percentage to the difficulty.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 1d)
 	public double bonusDifficultyPerPlayer = 0.25d;
 	
-	@ConfigEntry(translationKey = "Max Difficulty", comment = "The Maximum difficulty (times killed) reachable by Ender Dragon. By default is set to 24 because it's the last spawning end gate.")
+	@ConfigEntry(nameKey = "Max Difficulty", comment = "The Maximum difficulty (times killed) reachable by Ender Dragon. By default is set to 24 because it's the last spawning end gate.")
 	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int maxDifficulty = 8;
 
-	@ConfigEntry(translationKey = "Starting Difficulty", comment = "How much difficulty will players start with when joining a world? Note that this will apply when the player joins the world if the current player difficulty is below this value.")
+	@ConfigEntry(nameKey = "Starting Difficulty", comment = "How much difficulty will players start with when joining a world? Note that this will apply when the player joins the world if the current player difficulty is below this value.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int startingDifficulty = 0;
 
-	@ConfigEntry(translationKey = "Show First Killed Dragon Message", comment = "Set to false to disable the first Dragon killed message.")
+	@ConfigEntry(nameKey = "Show First Killed Dragon Message", comment = "Set to false to disable the first Dragon killed message.")
 	public boolean showFirstKilledDragonMessage = true;
 
 	public DifficultyFeature(LabelConfigGroup config) {
@@ -128,7 +128,7 @@ public class DifficultyFeature implements LabelConfigGroup {
 		for (ServerPlayerEntity player : players) {
 			AComponents.DF.maybeGet(player).ifPresent(difficulty -> {
 				if (difficulty.getKilledDragons() <= this.startingDifficulty && this.showFirstKilledDragonMessage)
-					player.sendMessage(new TranslatableText(Strings.Translatable.FIRST_DRAGON_KILL), true);
+					player.sendMessage(MutableText.of(new TranslatableTextContent(Strings.Translatable.FIRST_DRAGON_KILL)), true);
 				if (difficulty.getKilledDragons() < this.maxDifficulty)
 					difficulty.addKilledDragons(1);
 			});

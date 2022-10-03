@@ -27,31 +27,31 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.EndPortalFeature;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Larva", description = "Mini things that are just annoying.")
 public class LarvaFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Larva at Difficulty", comment = "At which difficulty the Ender Dragon starts spawning Larvae")
+	@ConfigEntry(nameKey = "Larva at Difficulty", comment = "At which difficulty the Ender Dragon starts spawning Larvae")
 	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int larvaAtDifficulty = 1;
 
-	@ConfigEntry(translationKey = "Bonus Larva Every Difficulty", comment = "As the Wither starts spawning Minions, every how much difficulty the Wither will spawn one more Minion")
+	@ConfigEntry(nameKey = "Bonus Larva Every Difficulty", comment = "As the Wither starts spawning Minions, every how much difficulty the Wither will spawn one more Minion")
 	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int bonusLarvaEveryDifficulty = 1;
 
-	@ConfigEntry(translationKey = "Max Larvae Spawned", comment = "Maximum Larva spawned by the Ender Dragon")
+	@ConfigEntry(nameKey = "Max Larvae Spawned", comment = "Maximum Larva spawned by the Ender Dragon")
 	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int maxSpawned = 7;
 
-	@ConfigEntry(translationKey = "Minimum Cooldown", comment = "Minimum ticks (20 ticks = 1 seconds) after Minions can spawn.")
+	@ConfigEntry(nameKey = "Minimum Cooldown", comment = "Minimum ticks (20 ticks = 1 seconds) after Minions can spawn.")
 	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int minCooldown = 800;
 
-	@ConfigEntry(translationKey = "Maximum Cooldown", comment = "Maximum ticks (20 ticks = 1 seconds) after Minions can spawn.")
+	@ConfigEntry(nameKey = "Maximum Cooldown", comment = "Maximum ticks (20 ticks = 1 seconds) after Minions can spawn.")
 	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int maxCooldown = 1400;
 
-	@ConfigEntry(translationKey = "Reduced Dragon Damage", comment = "If true, Larvae will take only 10% damage from the Ender Dragon.")
+	@ConfigEntry(nameKey = "Reduced Dragon Damage", comment = "If true, Larvae will take only 10% damage from the Ender Dragon.")
 	public boolean reducedDragonDamage = true;
 
 	public LarvaFeature(LabelConfigGroup config) {

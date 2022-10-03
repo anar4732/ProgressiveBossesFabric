@@ -7,6 +7,10 @@ import insane96mcp.progressivebosses.utils.AEC3DFeature;
 import insane96mcp.progressivebosses.utils.Label;
 import insane96mcp.progressivebosses.utils.LabelConfigGroup;
 import me.lortseam.completeconfig.api.ConfigContainer;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 @Label(name = "Modules")
 public class Modules implements LabelConfigGroup {
@@ -24,7 +28,7 @@ public class Modules implements LabelConfigGroup {
 	}
 
 	@Override
-    public ConfigContainer[] getTransitives() {
-        return new ConfigContainer[]{wither, dragon, elderGuardian, aec3d};
+	public @Nullable Collection<ConfigContainer> getTransitives() {
+        return Arrays.stream(new ConfigContainer[]{wither, dragon, elderGuardian, aec3d}).toList();
     }
 }

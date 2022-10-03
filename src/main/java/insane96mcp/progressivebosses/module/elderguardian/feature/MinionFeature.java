@@ -26,21 +26,22 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.loot.LootTables;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Minions", description = "Elder Guardians will spawn Elder Minions.")
 public class MinionFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Base Cooldown", comment = "Elder Guardians will spawn Elder Minions every this tick value (20 ticks = 1 sec).")
+	@ConfigEntry(nameKey = "Base Cooldown", comment = "Elder Guardians will spawn Elder Minions every this tick value (20 ticks = 1 sec).")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int baseCooldown = 200;
 
-	@ConfigEntry(translationKey = "Cooldown Reduction per Missing Elder", comment = "The base cooldown is reduced by this value for each missing Elder Guardian.")
+	@ConfigEntry(nameKey = "Cooldown Reduction per Missing Elder", comment = "The base cooldown is reduced by this value for each missing Elder Guardian.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int cooldownReductionPerMissingGuardian = 60;
 
@@ -114,7 +115,7 @@ public class MinionFeature implements LabelConfigGroup {
 		minionTags.putBoolean(Strings.Tags.ELDER_MINION, true);
 
 		elderMinion.setPosition(pos.x, pos.y, pos.z);
-		elderMinion.setCustomName(new TranslatableText(Strings.Translatable.ELDER_MINION));
+		elderMinion.setCustomName(MutableText.of(new TranslatableTextContent(Strings.Translatable.ELDER_MINION)));
 		elderMinion.lootTable = LootTables.EMPTY;
 
 		MCUtils.applyModifier(elderMinion, EntityAttributes.GENERIC_MOVEMENT_SPEED, Strings.AttributeModifiers.SWIM_SPEED_BONUS_UUID, Strings.AttributeModifiers.SWIM_SPEED_BONUS, 2d, EntityAttributeModifier.Operation.MULTIPLY_BASE);

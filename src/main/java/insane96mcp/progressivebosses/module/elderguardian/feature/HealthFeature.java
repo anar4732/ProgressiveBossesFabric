@@ -15,19 +15,19 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.ElderGuardianEntity;
 import net.minecraft.nbt.NbtCompound;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Health", description = "Bonus Health and Health regeneration.")
 public class HealthFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Health Bonus", comment = "Increase Elder Guardians' Health by this percentage (1 = +100% health)")
+	@ConfigEntry(nameKey = "Health Bonus", comment = "Increase Elder Guardians' Health by this percentage (1 = +100% health)")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double bonusHealth = 0.5d;
 
-	@ConfigEntry(translationKey = "Absorption Health", comment = "Adds absorption health to Elder Guradians (health that doesn't regen)")
+	@ConfigEntry(nameKey = "Absorption Health", comment = "Adds absorption health to Elder Guradians (health that doesn't regen)")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double absorptionHealth = 40d;
 
-	@ConfigEntry(translationKey = "Health Regen", comment = "Health Regen per second")
+	@ConfigEntry(nameKey = "Health Regen", comment = "Health Regen per second")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double healthRegen = 0.5d;
 

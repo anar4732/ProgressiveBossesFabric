@@ -10,10 +10,8 @@ public interface LabelConfigGroup extends ConfigGroup {
     }
 
     @Override
-    default String[] getTooltipTranslationKeys() {
-        return new String[]{
-            ((Label)getClass().<Label>getAnnotation(Label.class)).description()
-        };
+    default String getDescriptionKey() {
+        return ((Label)getClass().<Label>getAnnotation(Label.class)).description();
     }
 
     default void addConfigContainer(ConfigContainer config) {

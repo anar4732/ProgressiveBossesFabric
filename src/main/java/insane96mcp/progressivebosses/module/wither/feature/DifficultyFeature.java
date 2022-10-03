@@ -21,13 +21,14 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.registry.Registry;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Difficulty Settings", description = "How difficulty is handled for the Wither.")
 public class DifficultyFeature implements LabelConfigGroup {
 
@@ -35,41 +36,41 @@ public class DifficultyFeature implements LabelConfigGroup {
 	private static final List<String> defaultEntityBlacklist = Arrays.asList("botania:pink_wither");
 
 	@ConfigEntry(
-		translationKey = "Spawn Radius Player Check", 
+		nameKey = "Spawn Radius Player Check", 
 		comment = "How much blocks from wither will be scanned for players to check for difficult")
 	@ConfigEntry.BoundedInteger(min = 16, max = Integer.MAX_VALUE)
 	public int spawnRadiusPlayerCheck = 128;
 
 	@ConfigEntry(
-		translationKey = "Sum Spawned Wither Difficulty", 
+		nameKey = "Sum Spawned Wither Difficulty", 
 		comment = "If false and there's more than 1 player around the Wither, difficulty will be the average of all the players' difficulty instead of summing them.")
 	public boolean sumSpawnedWitherDifficulty = false;
 
 	@ConfigEntry(
-		translationKey = "Bonus Difficulty per Player", 
+		nameKey = "Bonus Difficulty per Player", 
 		comment = "Percentage bonus difficulty added to the Wither when more than one player is present. Each player past the first one will add this percentage to the difficulty.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = 24d)
 	public double bonusDifficultyPerPlayer = 0.25d;
 
 	@ConfigEntry(
-		translationKey = "Max Difficulty", 
+		nameKey = "Max Difficulty", 
 		comment = "The Maximum difficulty (times spawned) reachable by Wither.")
 	@ConfigEntry.BoundedInteger(min = 1, max = Integer.MAX_VALUE)
 	public int maxDifficulty = 8;
 
 	@ConfigEntry(
-		translationKey = "Starting Difficulty", 
+		nameKey = "Starting Difficulty", 
 		comment = "How much difficulty will players start with when joining a world? Note that this will apply when the first Wither is spawned so if the player has already spawned one this will not apply.")
 	@ConfigEntry.BoundedInteger(min = 0, max = Integer.MAX_VALUE)
 	public int startingDifficulty = 0;
 
 	@ConfigEntry(
-		translationKey = "Show First Summoned Wither Message", 
+		nameKey = "Show First Summoned Wither Message", 
 		comment = "Set to false to disable the first Wither summoned message.")
 	public boolean showFirstSummonedWitherMessage = true;
 
 	@ConfigEntry(
-		translationKey = "Entity Blacklist", 
+		nameKey = "Entity Blacklist", 
 		comment = "Entities that extend the vanilla Wither but shouldn't be taken into account by the mod (e.g. Botania's Pink Wither).")
 	public List<String> entityBlacklist = defaultEntityBlacklist;
 
@@ -109,7 +110,7 @@ public class DifficultyFeature implements LabelConfigGroup {
 				if (difficulty.getSpawnedWithers() >= this.maxDifficulty)
 					return;
 				if (difficulty.getSpawnedWithers() <= this.startingDifficulty && this.showFirstSummonedWitherMessage)
-					player.sendSystemMessage(new TranslatableText(Strings.Translatable.FIRST_WITHER_SUMMON), Util.NIL_UUID);
+					player.sendMessage(MutableText.of(new TranslatableTextContent(Strings.Translatable.FIRST_WITHER_SUMMON)), false);
 				difficulty.addSpawnedWithers(1);
 				System.out.println("[Progressive Bosses] Player " + player.getName().getString() + " spawned a Wither. Difficulty: " + difficulty.getSpawnedWithers());
 			});

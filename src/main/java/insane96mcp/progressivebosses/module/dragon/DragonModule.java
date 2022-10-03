@@ -1,6 +1,7 @@
 package insane96mcp.progressivebosses.module.dragon;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 import insane96mcp.progressivebosses.module.dragon.feature.AttackFeature;
 import insane96mcp.progressivebosses.module.dragon.feature.CrystalFeature;
@@ -13,6 +14,7 @@ import insane96mcp.progressivebosses.module.dragon.feature.RewardFeature;
 import insane96mcp.progressivebosses.utils.Label;
 import insane96mcp.progressivebosses.utils.LabelConfigGroup;
 import me.lortseam.completeconfig.api.ConfigContainer;
+import org.jetbrains.annotations.Nullable;
 
 @Label(name = "Dragon")
 public class DragonModule implements LabelConfigGroup {
@@ -34,8 +36,8 @@ public class DragonModule implements LabelConfigGroup {
 	}
 
 	@Override
-    public ConfigContainer[] getTransitives() {
-		return this.configs.toArray(new ConfigContainer[0]);
+    public @Nullable Collection<ConfigContainer> getTransitives() {
+		return this.configs;
     }
 
 	public DragonModule() {

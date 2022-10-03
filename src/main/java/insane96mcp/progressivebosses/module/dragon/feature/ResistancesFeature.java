@@ -17,15 +17,15 @@ import net.minecraft.entity.boss.dragon.phase.PhaseType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Resistances & Vulnerabilities", description = "Handles the Damage Resistances and Vulnerabilities")
 public class ResistancesFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Melee Damage reduction while at the center", comment = "Melee Damage reduction per difficulty while the Ender Dragon is at the center.")
+	@ConfigEntry(nameKey = "Melee Damage reduction while at the center", comment = "Melee Damage reduction per difficulty while the Ender Dragon is at the center.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double damageRedutionWhenSitting = 0.08d;
 
-	@ConfigEntry(translationKey = "Explosion Damage reduction", comment = "Damage reduction when hit by explosions (firework rockets excluded).")
+	@ConfigEntry(nameKey = "Explosion Damage reduction", comment = "Damage reduction when hit by explosions (firework rockets excluded).")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double explosionDamageReduction = 0.667d;
 

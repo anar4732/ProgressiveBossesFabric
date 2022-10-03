@@ -1,6 +1,7 @@
 package insane96mcp.progressivebosses.module.wither;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 import insane96mcp.progressivebosses.module.wither.feature.AttackFeature;
 import insane96mcp.progressivebosses.module.wither.feature.DifficultyFeature;
@@ -12,6 +13,7 @@ import insane96mcp.progressivebosses.module.wither.feature.RewardFeature;
 import insane96mcp.progressivebosses.utils.Label;
 import insane96mcp.progressivebosses.utils.LabelConfigGroup;
 import me.lortseam.completeconfig.api.ConfigContainer;
+import org.jetbrains.annotations.Nullable;
 
 @Label(name = "Wither")
 public class WitherModule implements LabelConfigGroup {
@@ -32,8 +34,8 @@ public class WitherModule implements LabelConfigGroup {
 	}
 
 	@Override
-    public ConfigContainer[] getTransitives() {
-		return this.configs.toArray(new ConfigContainer[0]);
+	public @Nullable Collection<ConfigContainer> getTransitives() {
+		return this.configs;
     }
 
 	public WitherModule() {

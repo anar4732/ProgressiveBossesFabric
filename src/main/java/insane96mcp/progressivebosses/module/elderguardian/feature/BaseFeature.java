@@ -18,16 +18,17 @@ import net.minecraft.network.packet.s2c.play.GameStateChangeS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.Util;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.explosion.Explosion;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Base", description = "Base feature for the Elder Guardian harder fights. Disabling this feature will disable the added sound when an Elder Guardian is killed.")
 public class BaseFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Adventure mode", comment = "If true, the player will not be able to break blocks when an Elder Guardian is nearby.")
+	@ConfigEntry(nameKey = "Adventure mode", comment = "If true, the player will not be able to break blocks when an Elder Guardian is nearby.")
 	public boolean adventure = true;
 	
 	public BaseFeature(LabelConfigGroup parent) {
@@ -65,7 +66,7 @@ public class BaseFeature implements LabelConfigGroup {
 			serverPlayer.interactionManager.changeGameMode(GameMode.ADVENTURE);
 			serverPlayer.networkHandler.sendPacket(new GameStateChangeS2CPacket(GameStateChangeS2CPacket.GAME_MODE_CHANGED, (float)GameMode.ADVENTURE.getId()));
 			if (!adventureMessage) {
-				serverPlayer.sendSystemMessage(new TranslatableText(Strings.Translatable.APPROACHING_ELDER_GUARDIAN), Util.NIL_UUID);
+				serverPlayer.sendMessage(MutableText.of(new TranslatableTextContent(Strings.Translatable.APPROACHING_ELDER_GUARDIAN)), false);
 				nbt.putBoolean(Strings.Tags.ADVENTURE_MESSAGE, true);
 			}
 		}

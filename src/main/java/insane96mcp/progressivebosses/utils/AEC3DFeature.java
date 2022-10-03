@@ -9,11 +9,11 @@ import net.minecraft.entity.Entity.RemovalReason;
 import net.minecraft.entity.EntityType;
 import net.minecraft.potion.Potions;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Area Effect Cloud 3D", description = "No more boring 2D Area of Effect Clouds")
 public class AEC3DFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Replace Vanilla Area of Effect Clouds", comment = "If true, vanilla Area of Effect Clouds will be replaced with 3D versions of them")
+	@ConfigEntry(nameKey = "Replace Vanilla Area of Effect Clouds", comment = "If true, vanilla Area of Effect Clouds will be replaced with 3D versions of them")
 	public boolean replaceVanillaAEC = true;
 
 	public AEC3DFeature(LabelConfigGroup parent) {

@@ -19,8 +19,7 @@
 		"AExplosionMixin"
 	],
 	"client": [
-		"client.WitherBossRendererMixin",
-		"client.ClientPlayNetworkHandlerMixin"
+		"client.WitherBossRendererMixin"
 	],
 	"minVersion": "0.8"
 }

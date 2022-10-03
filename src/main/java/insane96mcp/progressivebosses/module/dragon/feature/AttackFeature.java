@@ -44,46 +44,46 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.feature.EndPortalFeature;
 
-@ConfigEntries
+@ConfigEntries(includeAll = true)
 @Label(name = "Attack", description = "Makes the dragon hit harder in various different ways")
 public class AttackFeature implements LabelConfigGroup {
 
-	@ConfigEntry(translationKey = "Bonus Direct Damage", comment = "How much more damage per difficulty (percentage) does the Ender Dragon (directly) deal per difficulty?")
+	@ConfigEntry(nameKey = "Bonus Direct Damage", comment = "How much more damage per difficulty (percentage) does the Ender Dragon (directly) deal per difficulty?")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double increasedDirectDamage = 0.3d;
 
-	@ConfigEntry(translationKey = "Bonus Acid Pool Damage", comment = "How much more damage per difficulty (percentage) does the Ender Dragon's Acid Pool deal per difficulty?")
+	@ConfigEntry(nameKey = "Bonus Acid Pool Damage", comment = "How much more damage per difficulty (percentage) does the Ender Dragon's Acid Pool deal per difficulty?")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double increasedAcidPoolDamage = 0.3d;
 
-	@ConfigEntry(translationKey = "Charge Player Max Chance", comment = """
+	@ConfigEntry(nameKey = "Charge Player Max Chance", comment = """
 						Normally the Ender Dragon attacks only when leaving the center platform. With this active she has a chance when she has finished charging / fireballing or before checking if she should land in the center to charge the player.
 						This is the chance to start a charge attack when the difficulty is at max. Otherwise it scales accordingly.
 						The actual chance is: (this_value * (difficulty / max difficulty)).""")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double chargePlayerMaxChance = 0.45d; //Chance at max difficulty
 
-	@ConfigEntry(translationKey = "Fireball Max Chance", comment = """
+	@ConfigEntry(nameKey = "Fireball Max Chance", comment = """
 						Normally the Ender Dragon spits fireballs when a Crystal is destroyed and rarely during the fight. With this active she has a chance when she has finished charging / fireballing or before checking if she should land in the center to spit a fireball.
 						This is the chance to start a fireball attack when the difficulty is at max. Otherwise it scales accordingly.
 						The actual chance is: (this_value * (difficulty / max difficulty)).""")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double fireballMaxChance = 0.35d; //Chance at max difficulty
 
-	@ConfigEntry(translationKey = "Increase Max Rise and Fall", comment = "Since around 1.13/1.14 the Ender Dragon can no longer dive for more than about 3 blocks so she takes a lot to rise / fall. With this active the dragon will be able to rise and fall many more blocks, making easier to hit the player and approach the center.")
+	@ConfigEntry(nameKey = "Increase Max Rise and Fall", comment = "Since around 1.13/1.14 the Ender Dragon can no longer dive for more than about 3 blocks so she takes a lot to rise / fall. With this active the dragon will be able to rise and fall many more blocks, making easier to hit the player and approach the center.")
 	public boolean increaseMaxRiseAndFall = true;
 
-	@ConfigEntry(translationKey = "Fireball Explosion Magic Damage", comment = "On impact the Acid Fireball will deal magic damage in an area.")
+	@ConfigEntry(nameKey = "Fireball Explosion Magic Damage", comment = "On impact the Acid Fireball will deal magic damage in an area.")
 	public boolean fireballExplosionDamages = true;
 
-	@ConfigEntry(translationKey = "Fireball 3D Area Effect Cloud", comment = "On impact the Acid Fireball will generate a 3D area of effect cloud instead of a normal flat one. The 3D cloud lasts for half the time")
+	@ConfigEntry(nameKey = "Fireball 3D Area Effect Cloud", comment = "On impact the Acid Fireball will generate a 3D area of effect cloud instead of a normal flat one. The 3D cloud lasts for half the time")
 	public boolean fireball3DEffectCloud = true;
 
-	@ConfigEntry(translationKey = "Fireball Velocity Multiplier", comment = "Speed multiplier for the Dragon Fireball.")
+	@ConfigEntry(nameKey = "Fireball Velocity Multiplier", comment = "Speed multiplier for the Dragon Fireball.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double fireballVelocityMultiplier = 2.5d;
 
-	@ConfigEntry(translationKey = "Bonus Fireballs", comment = "The dragon will fire (up to) this more fireballs per difficulty. A decimal number dictates the chance to shot 1 more fireball, e.g. at difficulty 2 this value is 1.4, meaning that the dragon will can shot up to 2 fireballs and has 40% chance to shot up to 3. The bonus fireballs aren't directly aimed at the player but have.")
+	@ConfigEntry(nameKey = "Bonus Fireballs", comment = "The dragon will fire (up to) this more fireballs per difficulty. A decimal number dictates the chance to shot 1 more fireball, e.g. at difficulty 2 this value is 1.4, meaning that the dragon will can shot up to 2 fireballs and has 40% chance to shot up to 3. The bonus fireballs aren't directly aimed at the player but have.")
 	@ConfigEntry.BoundedDouble(min = 0d, max = Double.MAX_VALUE)
 	public double maxBonusFireball = 2d;
 

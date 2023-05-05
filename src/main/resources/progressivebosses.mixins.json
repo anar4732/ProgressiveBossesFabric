@@ -2,7 +2,7 @@
 	"required": true,
 	"package": "insane96mcp.progressivebosses.mixin",
 	"compatibilityLevel": "JAVA_8",
-	"refmap": "progressivebosses.refmap.json",
+	"refmap": "ProgressiveBosses-refmap.json",
 	"mixins": [
 		"ChargingPlayerPhaseMixin",
 		"DragonFireballEntityMixin",

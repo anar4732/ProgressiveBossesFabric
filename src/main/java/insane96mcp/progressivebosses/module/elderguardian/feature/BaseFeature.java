@@ -1,14 +1,8 @@
 package insane96mcp.progressivebosses.module.elderguardian.feature;
 
-import insane96mcp.progressivebosses.utils.ExplosionEvents;
+import insane96mcp.progressivebosses.utils.*;
 import insane96mcp.progressivebosses.utils.ExplosionEvents.OnExplosionEvent;
-import insane96mcp.progressivebosses.utils.IEntityExtraData;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingDeathEvent;
-import insane96mcp.progressivebosses.utils.PlayerEntityEvents;
-import insane96mcp.progressivebosses.utils.Strings;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.minecraft.entity.mob.ElderGuardianEntity;
@@ -20,8 +14,8 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.TranslatableTextContent;
-import net.minecraft.util.Util;
 import net.minecraft.world.GameMode;
+import net.minecraft.world.World;
 import net.minecraft.world.explosion.Explosion;
 
 @ConfigEntries(includeAll = true)
@@ -101,13 +95,13 @@ public class BaseFeature implements LabelConfigGroup {
 		if (event.getExplosion().getCausingEntity() == null)
 			return;
 
-		if (event.getExplosion().destructionType == Explosion.DestructionType.NONE)
+		if (event.getExplosion().destructionType == Explosion.DestructionType.KEEP)
 			return;
 
 		boolean nearElderGuardian = !event.getWorld().getEntitiesByClass(ElderGuardianEntity.class, event.getExplosion().getCausingEntity().getBoundingBox().expand(32d), e -> true).isEmpty();
 		if (nearElderGuardian) {
 			event.setCancelled();
-			event.getWorld().createExplosion(event.getExplosion().getCausingEntity(), event.getPosition().x, event.getPosition().y, event.getPosition().z, event.getExplosion().power, event.getExplosion().createFire, Explosion.DestructionType.NONE);
+			event.getWorld().createExplosion(event.getExplosion().getCausingEntity(), event.getPosition().x, event.getPosition().y, event.getPosition().z, event.getExplosion().power, event.getExplosion().createFire, World.ExplosionSourceType.MOB);
 		}
 	}
 

@@ -10,6 +10,7 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 import net.minecraft.world.explosion.Explosion;
 import net.minecraft.world.gen.feature.EndSpikeFeature;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class CrystalRespawnPhase extends AbstractPhase {
 				double z = spikesToRespawn.get(0).getCenterZ();
 				EndCrystalEntity crystal = new EndCrystalEntity(dragon.world, x + 0.5, y + 1, z + 0.5);
 				crystal.setShowBottom(true);
-				crystal.world.createExplosion(dragon, x + 0.5, y + 1.5, z + 0.5, 5f, Explosion.DestructionType.NONE);
+				crystal.world.createExplosion(dragon, x + 0.5, y + 1.5, z + 0.5, 5f, World.ExplosionSourceType.MOB);
 				dragon.world.spawnEntity(crystal);
 				CrystalFeature.generateCage(crystal.world, crystal.getBlockPos());
 				spikesToRespawn.remove(0);

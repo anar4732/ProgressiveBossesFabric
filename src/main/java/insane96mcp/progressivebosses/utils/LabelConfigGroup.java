@@ -2,20 +2,23 @@ package insane96mcp.progressivebosses.utils;
 
 import me.lortseam.completeconfig.api.ConfigContainer;
 import me.lortseam.completeconfig.api.ConfigGroup;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 
 public interface LabelConfigGroup extends ConfigGroup {
     @Override
     default String getId() {
-        return ((Label)getClass().<Label>getAnnotation(Label.class)).name();
+        return getClass().getAnnotation(Label.class).name();
     }
 
     @Override
+    @Environment(EnvType.CLIENT)
     default String getDescriptionKey() {
-        return ((Label)getClass().<Label>getAnnotation(Label.class)).description();
+        return getClass().getAnnotation(Label.class).description();
     }
 
     default void addConfigContainer(ConfigContainer config) {
-        
+    
     }
 
     default boolean isEnabled() {

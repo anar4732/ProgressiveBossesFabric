@@ -1,21 +1,19 @@
 package insane96mcp.progressivebosses.utils;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Nullable;
-
-import org.apache.commons.lang3.math.NumberUtils;
-
 import insane96mcp.progressivebosses.ProgressiveBosses;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.math.NumberUtils;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Drop {
 
@@ -49,7 +47,7 @@ public class Drop {
 			// LogHelper.warn("%s item for Drop is not a valid Resource Location", split[0]);
 			return null;
 		}
-		if (!Registry.ITEM.containsId(item)) {
+		if (!Registries.ITEM.containsId(item)) {
 			// LogHelper.warn("%s item for Drop seems to not exist", split[0]);
 			return null;
 		}
@@ -131,7 +129,7 @@ public class Drop {
 		if (this.difficultyMode == Drop.DifficultyMode.MINIMUM) {
 			if (RandomHelper.getDouble(world.random, 0d, 1d) >= chance)
 				return;
-			world.spawnEntity(createDrop(world, pos, Registry.ITEM.get(this.itemId), this.amount));
+			world.spawnEntity(createDrop(world, pos, Registries.ITEM.get(this.itemId), this.amount));
 		}
 		else if (this.difficultyMode == Drop.DifficultyMode.PER_DIFFICULTY) {
 			int tries = (int) (difficulty - this.difficultyRequired + 1);
@@ -142,10 +140,10 @@ public class Drop {
 				if (RandomHelper.getDouble(world.random, 0d, 1d) >= chance)
 					continue;
 				dropped++;
-				world.spawnEntity(createDrop(world, pos, Registry.ITEM.get(this.itemId), this.amount));
+				world.spawnEntity(createDrop(world, pos, Registries.ITEM.get(this.itemId), this.amount));
 			}
-			if (this.itemId.equals(Registry.ITEM.getId(ProgressiveBosses.NETHER_STAR_SHARD)) && dropped < difficulty * chance) {
-				world.spawnEntity(createDrop(world, pos, Registry.ITEM.get(this.itemId), (int) (Math.round(difficulty * chance - dropped))));
+			if (this.itemId.equals(Registries.ITEM.getId(ProgressiveBosses.NETHER_STAR_SHARD)) && dropped < difficulty * chance) {
+				world.spawnEntity(createDrop(world, pos, Registries.ITEM.get(this.itemId), (int) (Math.round(difficulty * chance - dropped))));
 			}
 		}
 	}
@@ -153,7 +151,7 @@ public class Drop {
 	private static ItemEntity createDrop(World world, Vec3d pos, Item item, int amount) {
 		ItemEntity itemEntity = new ItemEntity(world, pos.x, pos.y, pos.z, new ItemStack(item, amount));
 		//If it's a nether star shard set it as "invincible"
-		if (Registry.ITEM.getId(item).equals(Registry.ITEM.getId(ProgressiveBosses.NETHER_STAR_SHARD))) {
+		if (Registries.ITEM.getId(item).equals(Registries.ITEM.getId(ProgressiveBosses.NETHER_STAR_SHARD))) {
 			NbtCompound compoundNBT = new NbtCompound();
 			itemEntity.writeCustomDataToNbt(compoundNBT);
 			compoundNBT.putShort("Health", Short.MAX_VALUE);

@@ -1,5 +1,6 @@
 package insane96mcp.progressivebosses.mixin;
 
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -27,7 +28,7 @@ public class EndDragonFightMixin {
 	private void respawnDragon(List<EndCrystalEntity> p_64092_, CallbackInfo callback) {
 		List<EndCrystalEntity> endCrystals = this.world.getEntitiesByClass(EndCrystalEntity.class, new Box(this.exitPortalLocation).expand(48d), EndCrystalEntity::shouldShowBottom);
 		for (EndCrystalEntity endCrystal : endCrystals) {
-			endCrystal.world.createExplosion(endCrystal, endCrystal.getX(), endCrystal.getY(), endCrystal.getZ(), 6.0F, Explosion.DestructionType.NONE);
+			endCrystal.world.createExplosion(endCrystal, endCrystal.getX(), endCrystal.getY(), endCrystal.getZ(), 6.0F, World.ExplosionSourceType.MOB);
 			endCrystal.discard();
 		}
 	}

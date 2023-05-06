@@ -1,21 +1,8 @@
 package insane96mcp.progressivebosses.module.dragon.feature;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Stream;
-
 import insane96mcp.progressivebosses.module.dragon.phase.CrystalRespawnPhase;
-import insane96mcp.progressivebosses.utils.DummyEvent;
-import insane96mcp.progressivebosses.utils.IEntityExtraData;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.*;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingHurtEvent;
-import insane96mcp.progressivebosses.utils.RandomHelper;
-import insane96mcp.progressivebosses.utils.Strings;
-import insane96mcp.progressivebosses.utils.Utils;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
@@ -28,17 +15,23 @@ import net.minecraft.entity.boss.dragon.phase.PhaseType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.minecraft.world.explosion.Explosion;
 import net.minecraft.world.gen.feature.EndPortalFeature;
 import net.minecraft.world.gen.feature.EndSpikeFeature;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Crystals", description = "Makes more Crystal spawn and with more cages.")
@@ -252,13 +245,13 @@ public class CrystalFeature implements LabelConfigGroup {
 
 		BlockState baseBlockState = Blocks.BEDROCK.getDefaultState();
 		// if (ModList.get().isLoaded("endergetic"))
-			if (Registry.BLOCK.containsId(ENDERGETIC_CRYSTAL_HOLDER_RL))
-				baseBlockState =Registry.BLOCK.get(ENDERGETIC_CRYSTAL_HOLDER_RL).getDefaultState();
+			if (Registries.BLOCK.containsId(ENDERGETIC_CRYSTAL_HOLDER_RL))
+				baseBlockState = Registries.BLOCK.get(ENDERGETIC_CRYSTAL_HOLDER_RL).getDefaultState();
 			// else
 				// LogHelper.warn("The Endergetic Expansion is loaded but the %s block was not registered", ENDERGETIC_CRYSTAL_HOLDER_RL);
 		world.setBlockState(crystalPos.add(0, -1, 0), baseBlockState);
 
-		world.createExplosion(null, crystalPos.getX() + .5f, crystalPos.getY(), crystalPos.getZ() + .5, 5f, Explosion.DestructionType.DESTROY);
+		world.createExplosion(null, crystalPos.getX() + .5f, crystalPos.getY(), crystalPos.getZ() + .5, 5f, World.ExplosionSourceType.MOB);
 
 		EndCrystalEntity crystal = new EndCrystalEntity(world, crystalPos.getX() + .5, crystalPos.getY(), crystalPos.getZ() + .5);
 		world.spawnEntity(crystal);

@@ -1,19 +1,13 @@
 package insane96mcp.progressivebosses.module.wither.feature;
 
-import insane96mcp.progressivebosses.utils.DummyEvent;
-import insane96mcp.progressivebosses.utils.IEntityExtraData;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
-import insane96mcp.progressivebosses.utils.MCUtils;
-import insane96mcp.progressivebosses.utils.Strings;
+import insane96mcp.progressivebosses.utils.*;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.entity.attribute.EntityAttributeModifier;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.boss.WitherEntity;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Health", description = "Bonus Health and Bonus regeneration. The feature even fixes the Wither health bar not updating on spawn.")
@@ -34,37 +28,37 @@ public class HealthFeature implements LabelConfigGroup {
 	public HealthFeature(LabelConfigGroup parent) {
 		parent.addConfigContainer(this);
 		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> this.onSpawn(new DummyEvent(world, entity)));
-		LivingEntityEvents.TICK.register((entity) -> this.onUpdate(new DummyEvent(entity.world, entity)));
+		LivingEntityEvents.TICK.register((entity) -> this.onUpdate(new DummyEvent(entity.level, entity)));
 	}
 
 	public void onSpawn(DummyEvent event) {
-		if (event.getWorld().isClient)
+		if (event.getWorld().isClientSide)
 			return;
 
 		if (this.bonusPerDifficulty == 0d)
 			return;
 
-		if (!(event.getEntity() instanceof WitherEntity wither))
+		if (!(event.getEntity() instanceof WitherBoss wither))
 			return;
 
-		if (wither.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).getModifier(Strings.AttributeModifiers.BONUS_HEALTH_UUID) != null)
+		if (wither.getAttribute(Attributes.MAX_HEALTH).getModifier(Strings.AttributeModifiers.BONUS_HEALTH_UUID) != null)
 			return;
 
-		NbtCompound witherTags = ((IEntityExtraData) wither).getPersistentData();
+		CompoundTag witherTags = ((IEntityExtraData) wither).getPersistentData();
 		double difficulty = witherTags.getFloat(Strings.Tags.DIFFICULTY);
-		MCUtils.applyModifier(wither, EntityAttributes.GENERIC_MAX_HEALTH, Strings.AttributeModifiers.BONUS_HEALTH_UUID, Strings.AttributeModifiers.BONUS_HEALTH, difficulty * this.bonusPerDifficulty, EntityAttributeModifier.Operation.ADDITION);
+		MCUtils.applyModifier(wither, Attributes.MAX_HEALTH, Strings.AttributeModifiers.BONUS_HEALTH_UUID, Strings.AttributeModifiers.BONUS_HEALTH, difficulty * this.bonusPerDifficulty, AttributeModifier.Operation.ADDITION);
 
-		boolean hasInvulTicks = wither.getInvulnerableTimer() > 0;
+		boolean hasInvulTicks = wither.getInvulnerableTicks() > 0;
 
 		if (hasInvulTicks)
 			wither.setHealth(Math.max(1, wither.getMaxHealth() - 200));
 	}
 
 	public void onUpdate(DummyEvent event) {
-		if (event.getEntity().world.isClient)
+		if (event.getEntity().level.isClientSide)
 			return;
 
-		if (!(event.getEntity() instanceof WitherEntity wither))
+		if (!(event.getEntity() instanceof WitherBoss wither))
 			return;
 
 		if (this.bonusRegenPerDifficulty == 0d || this.maxBonusRegen == 0d)
@@ -72,14 +66,14 @@ public class HealthFeature implements LabelConfigGroup {
 
 		//fixInvulBossBar(wither);
 
-		if (wither.getInvulnerableTimer() > 0 || !wither.isAlive())
+		if (wither.getInvulnerableTicks() > 0 || !wither.isAlive())
 			return;
 
 		//Disable bonus health regen when health between 49% and 50%
 		if (wither.getHealth() / wither.getMaxHealth() > 0.49f && wither.getHealth() / wither.getMaxHealth() < 0.50f)
 			return;
 
-		NbtCompound tags = ((IEntityExtraData) wither).getPersistentData();
+		CompoundTag tags = ((IEntityExtraData) wither).getPersistentData();
 
 		float difficulty = tags.getFloat(Strings.Tags.DIFFICULTY);
 
@@ -93,10 +87,10 @@ public class HealthFeature implements LabelConfigGroup {
 		wither.heal(heal);
 	}
 
-	private void fixInvulBossBar(WitherEntity wither) {
-		if (wither.getInvulnerableTimer() == 0)
+	private void fixInvulBossBar(WitherBoss wither) {
+		if (wither.getInvulnerableTicks() == 0)
 			return;
 
-		wither.bossBar.setPercent(wither.getHealth() / wither.getMaxHealth());
+		wither.bossEvent.setProgress(wither.getHealth() / wither.getMaxHealth());
 	}
 }

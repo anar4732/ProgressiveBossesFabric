@@ -1,21 +1,21 @@
 package insane96mcp.progressivebosses.module.wither.entity;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.model.ModelPart;
-import net.minecraft.client.render.entity.model.BipedEntityModel;
-import net.minecraft.client.render.entity.model.CrossbowPosing;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.ai.RangedAttackMob;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.Arm;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.model.AnimationUtils;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.RangedAttackMob;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 @Environment(value=EnvType.CLIENT)
-public class WitherMinionModel<T extends MobEntity & RangedAttackMob> extends BipedEntityModel<T> {
+public class WitherMinionModel<T extends Mob & RangedAttackMob> extends HumanoidModel<T> {
 
 	public WitherMinionModel(ModelPart part) {
 		super(part);
@@ -39,47 +39,47 @@ public class WitherMinionModel<T extends MobEntity & RangedAttackMob> extends Bi
 	}
 
 	public void prepareMobModel(T entityIn, float limbSwing, float limbSwingAmount, float partialTick) {
-		this.rightArmPose = BipedEntityModel.ArmPose.EMPTY;
-		this.leftArmPose = BipedEntityModel.ArmPose.EMPTY;
-		ItemStack itemstack = entityIn.getStackInHand(Hand.MAIN_HAND);
-		if (itemstack.getItem() == Items.BOW && entityIn.isAttacking()) {
-			if (entityIn.getMainArm() == Arm.RIGHT) {
-				this.rightArmPose = BipedEntityModel.ArmPose.BOW_AND_ARROW;
+		this.rightArmPose = HumanoidModel.ArmPose.EMPTY;
+		this.leftArmPose = HumanoidModel.ArmPose.EMPTY;
+		ItemStack itemstack = entityIn.getItemInHand(InteractionHand.MAIN_HAND);
+		if (itemstack.getItem() == Items.BOW && entityIn.isAggressive()) {
+			if (entityIn.getMainArm() == HumanoidArm.RIGHT) {
+				this.rightArmPose = HumanoidModel.ArmPose.BOW_AND_ARROW;
 			} else {
-				this.leftArmPose = BipedEntityModel.ArmPose.BOW_AND_ARROW;
+				this.leftArmPose = HumanoidModel.ArmPose.BOW_AND_ARROW;
 			}
 		}
 
-		super.animateModel(entityIn, limbSwing, limbSwingAmount, partialTick);
+		super.prepareMobModel(entityIn, limbSwing, limbSwingAmount, partialTick);
 	}
 
 	/**
 	 * Sets this entity's model rotation angles
 	 */
 	public void setupAnim(T entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-		super.setAngles(entityIn, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
-		ItemStack itemstack = entityIn.getMainHandStack();
-		if (entityIn.isAttacking() && (itemstack.isEmpty() || itemstack.getItem() != Items.BOW)) {
-			float f = MathHelper.sin(this.handSwingProgress * (float)Math.PI);
-			float f1 = MathHelper.sin((1.0F - (1.0F - this.handSwingProgress) * (1.0F - this.handSwingProgress)) * (float)Math.PI);
-			this.rightArm.roll = 0.0F;
-			this.leftArm.roll = 0.0F;
-			this.rightArm.yaw = -(0.1F - f * 0.6F);
-			this.leftArm.yaw = 0.1F - f * 0.6F;
-			this.rightArm.pitch = (-(float)Math.PI / 2F);
-			this.leftArm.pitch = (-(float)Math.PI / 2F);
-			this.rightArm.pitch -= f * 1.2F - f1 * 0.4F;
-			this.leftArm.pitch -= f * 1.2F - f1 * 0.4F;
-			CrossbowPosing.swingArms(this.rightArm, this.leftArm, ageInTicks);
+		super.setupAnim(entityIn, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+		ItemStack itemstack = entityIn.getMainHandItem();
+		if (entityIn.isAggressive() && (itemstack.isEmpty() || itemstack.getItem() != Items.BOW)) {
+			float f = Mth.sin(this.attackTime * (float)Math.PI);
+			float f1 = Mth.sin((1.0F - (1.0F - this.attackTime) * (1.0F - this.attackTime)) * (float)Math.PI);
+			this.rightArm.zRot = 0.0F;
+			this.leftArm.zRot = 0.0F;
+			this.rightArm.yRot = -(0.1F - f * 0.6F);
+			this.leftArm.yRot = 0.1F - f * 0.6F;
+			this.rightArm.xRot = (-(float)Math.PI / 2F);
+			this.leftArm.xRot = (-(float)Math.PI / 2F);
+			this.rightArm.xRot -= f * 1.2F - f1 * 0.4F;
+			this.leftArm.xRot -= f * 1.2F - f1 * 0.4F;
+			AnimationUtils.bobArms(this.rightArm, this.leftArm, ageInTicks);
 		}
 
 	}
 
-	public void setArmAngle(Arm sideIn, MatrixStack matrixStackIn) {
-		float f = sideIn == Arm.RIGHT ? 1.0F : -1.0F;
+	public void translateToHand(HumanoidArm sideIn, PoseStack matrixStackIn) {
+		float f = sideIn == HumanoidArm.RIGHT ? 1.0F : -1.0F;
 		ModelPart modelrenderer = this.getArm(sideIn);
-		modelrenderer.pivotX += f;
-		modelrenderer.rotate(matrixStackIn);
-		modelrenderer.pivotX -= f;
+		modelrenderer.x += f;
+		modelrenderer.translateAndRotate(matrixStackIn);
+		modelrenderer.x -= f;
 	}
 }

@@ -1,15 +1,15 @@
 package insane96mcp.progressivebosses.mixin;
 
 import insane96mcp.progressivebosses.module.Modules;
-import net.minecraft.entity.ai.pathing.Path;
-import net.minecraft.entity.boss.dragon.phase.HoldingPatternPhase;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonHoldingPatternPhase;
+import net.minecraft.world.level.pathfinder.Path;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(HoldingPatternPhase.class)
+@Mixin(DragonHoldingPatternPhase.class)
 public class HoldingPatternPhaseMixin {
 
 	@Shadow
@@ -17,10 +17,10 @@ public class HoldingPatternPhaseMixin {
 
 	@Inject(at = @At("HEAD"), method = "tickInRange()V", cancellable = true)
 	private void findNewTarget(CallbackInfo callback) {
-		if (this.path == null || !this.path.isFinished())
+		if (this.path == null || !this.path.isDone())
 			return;
 
-		if (Modules.dragon.attack.onPhaseEnd(((HoldingPatternPhase)(Object)this).dragon))
+		if (Modules.dragon.attack.onPhaseEnd(((DragonHoldingPatternPhase)(Object)this).dragon))
 			callback.cancel();
 	}
 }

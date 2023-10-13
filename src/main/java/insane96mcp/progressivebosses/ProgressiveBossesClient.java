@@ -4,13 +4,8 @@ import insane96mcp.progressivebosses.module.dragon.entity.AreaEffectCloud3DRende
 import insane96mcp.progressivebosses.module.dragon.entity.LarvaRenderer;
 import insane96mcp.progressivebosses.module.wither.entity.WitherMinionRenderer;
 import insane96mcp.progressivebosses.network.PacketManagerClient;
-import me.lortseam.completeconfig.gui.ConfigScreenBuilder;
-import me.lortseam.completeconfig.gui.cloth.ClothConfigScreenBuilder;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.fabricmc.loader.api.FabricLoader;
-
-import static insane96mcp.progressivebosses.ProgressiveBosses.MODID;
 
 public class ProgressiveBossesClient implements ClientModInitializer {
 

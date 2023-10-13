@@ -1,20 +1,14 @@
 package insane96mcp.progressivebosses.module.dragon.feature;
 
-import insane96mcp.progressivebosses.utils.DummyEvent;
-import insane96mcp.progressivebosses.utils.IEntityExtraData;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
-import insane96mcp.progressivebosses.utils.MCUtils;
-import insane96mcp.progressivebosses.utils.Strings;
+import insane96mcp.progressivebosses.utils.*;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.entity.attribute.EntityAttributeModifier;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.boss.dragon.phase.PhaseType;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Health", description = "Bonus Health and Bonus regeneration.")
@@ -39,38 +33,38 @@ public class HealthFeature implements LabelConfigGroup {
 	public HealthFeature(LabelConfigGroup parent) {
 		parent.addConfigContainer(this);
 		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> this.onSpawn(new DummyEvent(world, entity)));
-		LivingEntityEvents.TICK.register((entity) -> this.onUpdate(new DummyEvent(entity.world, entity)));
+		LivingEntityEvents.TICK.register((entity) -> this.onUpdate(new DummyEvent(entity.level, entity)));
 	}
 
 	public void onSpawn(DummyEvent event) {
-		if (event.getWorld().isClient)
+		if (event.getWorld().isClientSide)
 			return;
 
 		if (this.bonusPerDifficulty == 0d)
 			return;
 
-		if (!(event.getEntity() instanceof EnderDragonEntity enderDragon))
+		if (!(event.getEntity() instanceof EnderDragon enderDragon))
 			return;
 
-		if (enderDragon.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).getModifier(Strings.AttributeModifiers.BONUS_HEALTH_UUID) != null)
+		if (enderDragon.getAttribute(Attributes.MAX_HEALTH).getModifier(Strings.AttributeModifiers.BONUS_HEALTH_UUID) != null)
 			return;
 
-		NbtCompound dragonTags = ((IEntityExtraData) enderDragon).getPersistentData();
+		CompoundTag dragonTags = ((IEntityExtraData) enderDragon).getPersistentData();
 		double difficulty = dragonTags.getFloat(Strings.Tags.DIFFICULTY);
-		MCUtils.applyModifier(enderDragon, EntityAttributes.GENERIC_MAX_HEALTH, Strings.AttributeModifiers.BONUS_HEALTH_UUID, Strings.AttributeModifiers.BONUS_HEALTH, difficulty * this.bonusPerDifficulty, EntityAttributeModifier.Operation.ADDITION);
+		MCUtils.applyModifier(enderDragon, Attributes.MAX_HEALTH, Strings.AttributeModifiers.BONUS_HEALTH_UUID, Strings.AttributeModifiers.BONUS_HEALTH, difficulty * this.bonusPerDifficulty, AttributeModifier.Operation.ADDITION);
 	}
 
 	public void onUpdate(DummyEvent event) {
-		if (event.getEntity().world.isClient)
+		if (event.getEntity().level.isClientSide)
 			return;
 
-		if (!(event.getEntity() instanceof EnderDragonEntity enderDragon))
+		if (!(event.getEntity() instanceof EnderDragon enderDragon))
 			return;
 
-		if (!enderDragon.isAlive() || enderDragon.getPhaseManager().getCurrent().getType() == PhaseType.DYING)
+		if (!enderDragon.isAlive() || enderDragon.getPhaseManager().getCurrentPhase().getPhase() == EnderDragonPhase.DYING)
 			return;
 
-		NbtCompound tags = ((IEntityExtraData) enderDragon).getPersistentData();
+		CompoundTag tags = ((IEntityExtraData) enderDragon).getPersistentData();
 
 		float difficulty = tags.getFloat(Strings.Tags.DIFFICULTY);
 
@@ -95,11 +89,11 @@ public class HealthFeature implements LabelConfigGroup {
 		return (float) Math.min(difficulty * this.bonusRegenPerDifficulty, this.maxBonusRegen);
 	}
 
-	private float getCrystalBonusHeal(EnderDragonEntity enderDragon, float difficulty) {
+	private float getCrystalBonusHeal(EnderDragon enderDragon, float difficulty) {
 		if (this.bonusCrystalRegen == 0d)
 			return 0f;
 
-		if (enderDragon.connectedCrystal == null || !enderDragon.connectedCrystal.isAlive())
+		if (enderDragon.nearestCrystal == null || !enderDragon.nearestCrystal.isAlive())
 			return 0f;
 
 		double currHealthPerc = 1 - (enderDragon.getHealth() / enderDragon.getMaxHealth());

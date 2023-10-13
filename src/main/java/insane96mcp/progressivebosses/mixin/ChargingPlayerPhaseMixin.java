@@ -2,12 +2,12 @@ package insane96mcp.progressivebosses.mixin;
 
 import com.mojang.logging.LogUtils;
 import insane96mcp.progressivebosses.module.Modules;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.boss.dragon.phase.AbstractPhase;
-import net.minecraft.entity.boss.dragon.phase.ChargingPlayerPhase;
-import net.minecraft.entity.boss.dragon.phase.Phase;
-import net.minecraft.entity.boss.dragon.phase.PhaseType;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.phases.AbstractDragonPhaseInstance;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonChargePlayerPhase;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,36 +16,36 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(ChargingPlayerPhase.class)
-public abstract class ChargingPlayerPhaseMixin extends AbstractPhase {
+@Mixin(DragonChargePlayerPhase.class)
+public abstract class ChargingPlayerPhaseMixin extends AbstractDragonPhaseInstance {
 	@Shadow
 	@Final
 	private static Logger LOGGER = LogUtils.getLogger();
 	@Shadow
 	private int chargingTicks;
 	@Shadow
-	private Vec3d pathTarget;
+	private Vec3 pathTarget;
 
-	public ChargingPlayerPhaseMixin(EnderDragonEntity dragonIn) {
+	public ChargingPlayerPhaseMixin(EnderDragon dragonIn) {
 		super(dragonIn);
 	}
 
 	@Override
-	public void serverTick() {
+	public void doServerTick() {
 		if (this.pathTarget == null) {
 			LOGGER.warn("Aborting charge player as no target was set.");
-			this.dragon.getPhaseManager().setPhase(PhaseType.HOLDING_PATTERN);
+			this.dragon.getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
 		} else if (this.chargingTicks > 0 && this.chargingTicks++ >= 10) {
 			// If must not charge or fireball then go back to holding pattern
 			if (!Modules.dragon.attack.onPhaseEnd(this.dragon))
-				this.dragon.getPhaseManager().setPhase(PhaseType.HOLDING_PATTERN);
+				this.dragon.getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
 			// Otherwise reset the phase, in case she charges again
 			else
 				// Can't use initPhase() otherwise the target is reset. Also making the dragon
 				// take more time to restart the charging
 				this.chargingTicks = -10;
 		} else {
-			double d0 = this.pathTarget.squaredDistanceTo(this.dragon.getX(), this.dragon.getY(), this.dragon.getZ());
+			double d0 = this.pathTarget.distanceToSqr(this.dragon.getX(), this.dragon.getY(), this.dragon.getZ());
 			if (d0 < 100.0D || d0 > 22500.0D || this.dragon.horizontalCollision || this.dragon.verticalCollision) {
 				++this.chargingTicks;
 			}
@@ -62,7 +62,7 @@ public abstract class ChargingPlayerPhaseMixin extends AbstractPhase {
 	// @Shadow public abstract void beginPhase();
 
 	@Override
-	public PhaseType<? extends Phase> getType() {
-		return PhaseType.CHARGING_PLAYER;
+	public EnderDragonPhase<? extends DragonPhaseInstance> getPhase() {
+		return EnderDragonPhase.CHARGING_PLAYER;
 	}
 }

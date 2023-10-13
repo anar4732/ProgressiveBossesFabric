@@ -1,19 +1,18 @@
 package insane96mcp.progressivebosses.module.wither.ai;
 
-import java.util.EnumSet;
-
 import insane96mcp.progressivebosses.utils.IEntityExtraData;
 import insane96mcp.progressivebosses.utils.RandomHelper;
 import insane96mcp.progressivebosses.utils.Strings;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.boss.WitherEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
+import java.util.EnumSet;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.player.Player;
 
 public class WitherRangedAttackGoal extends Goal {
-	private final WitherEntity wither;
+	private final WitherBoss wither;
 	private LivingEntity target;
 	private int attackTime = -1;
 	private int seeTime;
@@ -23,25 +22,25 @@ public class WitherRangedAttackGoal extends Goal {
 	//Increases the rate of attack of the middle head the closer the player is to the wither
 	private final boolean increaseASOnNear;
 
-	public WitherRangedAttackGoal(WitherEntity wither, int attackInterval, float attackRadius, boolean increaseASOnNear) {
+	public WitherRangedAttackGoal(WitherBoss wither, int attackInterval, float attackRadius, boolean increaseASOnNear) {
 		this.wither = wither;
 		this.attackInterval = attackInterval;
 		this.attackRadius = attackRadius;
 		this.attackRadiusSqr = attackRadius * attackRadius;
 		this.increaseASOnNear = increaseASOnNear;
-		this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK));
+		this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
 	}
 
 	/**
 	 * Returns whether execution should begin. You can also read and cache any state necessary for execution in this
 	 * method as well.
 	 */
-	public boolean canStart() {
-		if (this.wither.getInvulnerableTimer() > 0)
+	public boolean canUse() {
+		if (this.wither.getInvulnerableTicks() > 0)
 			return false;
 
-		int targetId = this.wither.getTrackedEntityId(0);
-		Entity entity = this.wither.world.getEntityById(targetId);
+		int targetId = this.wither.getAlternativeTarget(0);
+		Entity entity = this.wither.level.getEntity(targetId);
 		if (entity == null)
 			return false;
 		if (!(entity instanceof LivingEntity livingEntity))
@@ -56,8 +55,8 @@ public class WitherRangedAttackGoal extends Goal {
 	/**
 	 * Returns whether an in-progress EntityAIBase should continue executing
 	 */
-	public boolean shouldContinue() {
-		return this.canStart() || !this.wither.getNavigation().isIdle();
+	public boolean canContinueToUse() {
+		return this.canUse() || !this.wither.getNavigation().isDone();
 	}
 
 	/**
@@ -73,10 +72,10 @@ public class WitherRangedAttackGoal extends Goal {
 	 * Keep ticking a continuous task that has already been started
 	 */
 	public void tick() {
-		NbtCompound witherTags = ((IEntityExtraData) wither).getPersistentData();
+		CompoundTag witherTags = ((IEntityExtraData) wither).getPersistentData();
 
-		double distanceSq = this.wither.squaredDistanceTo(this.target.getX(), this.target.getY(), this.target.getZ());
-		boolean canSee = this.wither.getVisibilityCache().canSee(this.target);
+		double distanceSq = this.wither.distanceToSqr(this.target.getX(), this.target.getY(), this.target.getZ());
+		boolean canSee = this.wither.getSensing().hasLineOfSight(this.target);
 		int unseenPlayerTicks = witherTags.getInt(Strings.Tags.UNSEEN_PLAYER_TICKS);
 		if (canSee) {
 			++this.seeTime;
@@ -85,19 +84,19 @@ public class WitherRangedAttackGoal extends Goal {
 		}
 		else {
 			this.seeTime = 0;
-			if (this.target instanceof PlayerEntity && unseenPlayerTicks < 300)
+			if (this.target instanceof Player && unseenPlayerTicks < 300)
 				witherTags.putInt(Strings.Tags.UNSEEN_PLAYER_TICKS, unseenPlayerTicks + 2);
 		}
 
 		if (distanceSq <= (double)this.attackRadiusSqr && this.seeTime > 0) {
 			//Stops the wither from chasing the player
-			this.wither.setVelocity(0d, wither.getVelocity().y, 0d);
+			this.wither.setDeltaMovement(0d, wither.getDeltaMovement().y, 0d);
 		}
-		else if (this.seeTime <= 0 && !this.wither.world.getBlockState(this.wither.getBlockPos().down()).isOpaque() && !this.wither.world.isSkyVisible(this.wither.getBlockPos())) {
-			this.wither.setVelocity(wither.getVelocity().x, -1.0d, wither.getVelocity().z);
+		else if (this.seeTime <= 0 && !this.wither.level.getBlockState(this.wither.blockPosition().below()).canOcclude() && !this.wither.level.canSeeSky(this.wither.blockPosition())) {
+			this.wither.setDeltaMovement(wither.getDeltaMovement().x, -1.0d, wither.getDeltaMovement().z);
 		}
 
-		this.wither.getLookControl().lookAt(this.target, 30.0F, 30.0F);
+		this.wither.getLookControl().setLookAt(this.target, 30.0F, 30.0F);
 
 		int barrageAttackTick = witherTags.getInt(Strings.Tags.BARRAGE_ATTACK);
 		if (barrageAttackTick > 0) {
@@ -105,7 +104,7 @@ public class WitherRangedAttackGoal extends Goal {
 				return;
 			witherTags.putInt(Strings.Tags.BARRAGE_ATTACK, barrageAttackTick - 1);
 			if (barrageAttackTick % 3 == 0) {
-				this.wither.shootSkullAt(RandomHelper.getInt(this.wither.getRandom(), 0, 3), this.target.getX() + RandomHelper.getDouble(this.wither.getRandom(), -2d, 2d), this.target.getY() + (double)this.target.getStandingEyeHeight() * 0.5D + RandomHelper.getDouble(this.wither.getRandom(), -2d, 2d), this.target.getZ() + RandomHelper.getDouble(this.wither.getRandom(), -2d, 2d), false);
+				this.wither.performRangedAttack(RandomHelper.getInt(this.wither.getRandom(), 0, 3), this.target.getX() + RandomHelper.getDouble(this.wither.getRandom(), -2d, 2d), this.target.getY() + (double)this.target.getEyeHeight() * 0.5D + RandomHelper.getDouble(this.wither.getRandom(), -2d, 2d), this.target.getZ() + RandomHelper.getDouble(this.wither.getRandom(), -2d, 2d), false);
 			}
 		}
 		else if (--this.attackTime <= 0) {
@@ -113,10 +112,10 @@ public class WitherRangedAttackGoal extends Goal {
 				return;
 			if (RandomHelper.getFloat(this.wither.getRandom(), 0f, 1f) < .1f)
 				for (int h = 0; h < 3; h++) {
-					this.wither.shootSkullAt(h, this.target.getX() + RandomHelper.getDouble(this.wither.getRandom(), -1.25d, 1.25d), this.target.getY() + RandomHelper.getDouble(this.wither.getRandom(), -1.25d, 1.25d) + (double)this.target.getStandingEyeHeight() * 0.5D, target.getZ() + RandomHelper.getDouble(this.wither.getRandom(), -1.25d, 1.25d), RandomHelper.getDouble(this.wither.getRandom(), 0d, 1d) < 0.001F);
+					this.wither.performRangedAttack(h, this.target.getX() + RandomHelper.getDouble(this.wither.getRandom(), -1.25d, 1.25d), this.target.getY() + RandomHelper.getDouble(this.wither.getRandom(), -1.25d, 1.25d) + (double)this.target.getEyeHeight() * 0.5D, target.getZ() + RandomHelper.getDouble(this.wither.getRandom(), -1.25d, 1.25d), RandomHelper.getDouble(this.wither.getRandom(), 0d, 1d) < 0.001F);
 				}
 			else
-				this.wither.shootSkullAt(0, this.target.getX(), this.target.getY() + (double)this.target.getStandingEyeHeight() * 0.5D, target.getZ(), RandomHelper.getDouble(this.wither.getRandom(), 0d, 1d) < 0.001F);
+				this.wither.performRangedAttack(0, this.target.getX(), this.target.getY() + (double)this.target.getEyeHeight() * 0.5D, target.getZ(), RandomHelper.getDouble(this.wither.getRandom(), 0d, 1d) < 0.001F);
 			this.attackTime = this.attackInterval;
 
 			if (this.increaseASOnNear) {
@@ -130,7 +129,7 @@ public class WitherRangedAttackGoal extends Goal {
 	}
 
 	@Override
-	public boolean shouldRunEveryTick() {
+	public boolean requiresUpdateEveryTick() {
 		return true;
 	}
 }

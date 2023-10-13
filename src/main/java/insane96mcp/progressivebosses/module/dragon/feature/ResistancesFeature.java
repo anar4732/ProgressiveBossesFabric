@@ -1,21 +1,16 @@
 package insane96mcp.progressivebosses.module.dragon.feature;
 
-import java.util.Arrays;
-import java.util.List;
-
-import insane96mcp.progressivebosses.utils.IEntityExtraData;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.*;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingHurtEvent;
-import insane96mcp.progressivebosses.utils.Strings;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.boss.dragon.phase.Phase;
-import net.minecraft.entity.boss.dragon.phase.PhaseType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.entity.player.Player;
+import java.util.Arrays;
+import java.util.List;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Resistances & Vulnerabilities", description = "Handles the Damage Resistances and Vulnerabilities")
@@ -35,7 +30,7 @@ public class ResistancesFeature implements LabelConfigGroup {
 	}
 
 	public void onDragonDamage(OnLivingHurtEvent event) {
-		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
+		if (!(event.getEntity() instanceof EnderDragon dragon))
 			return;
 
 		meleeDamageReduction(event, dragon);
@@ -43,25 +38,25 @@ public class ResistancesFeature implements LabelConfigGroup {
 	}
 
 	@ConfigEntries.Exclude
-	private static final List<PhaseType<? extends Phase>> sittingPhases = Arrays.asList(PhaseType.SITTING_SCANNING, PhaseType.SITTING_ATTACKING, PhaseType.SITTING_FLAMING, PhaseType.TAKEOFF);
+	private static final List<EnderDragonPhase<? extends DragonPhaseInstance>> sittingPhases = Arrays.asList(EnderDragonPhase.SITTING_SCANNING, EnderDragonPhase.SITTING_ATTACKING, EnderDragonPhase.SITTING_FLAMING, EnderDragonPhase.TAKEOFF);
 
-	private void meleeDamageReduction(OnLivingHurtEvent event, EnderDragonEntity dragon) {
+	private void meleeDamageReduction(OnLivingHurtEvent event, EnderDragon dragon) {
 		if (this.damageRedutionWhenSitting == 0d)
 			return;
 
-		NbtCompound compoundNBT = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag compoundNBT = ((IEntityExtraData) dragon).getPersistentData();
 		float difficulty = compoundNBT.getFloat(Strings.Tags.DIFFICULTY);
 
-		if (sittingPhases.contains(dragon.getPhaseManager().getCurrent().getType()) && event.getSource().getSource() instanceof PlayerEntity) {
+		if (sittingPhases.contains(dragon.getPhaseManager().getCurrentPhase().getPhase()) && event.getSource().getDirectEntity() instanceof Player) {
 			event.setAmount((event.getAmount() - (float) (event.getAmount() * (this.damageRedutionWhenSitting * difficulty))));
 		}
 	}
 
-	private void explosionDamageReduction(OnLivingHurtEvent event, EnderDragonEntity dragon) {
+	private void explosionDamageReduction(OnLivingHurtEvent event, EnderDragon dragon) {
 		if (this.explosionDamageReduction == 0d)
 			return;
 
-		if (event.getSource().isExplosive() && !event.getSource().getName().equals("fireworks")) {
+		if (event.getSource().isExplosive() && !event.getSource().getMsgId().equals("fireworks")) {
 			event.setAmount((event.getAmount() - (float) (event.getAmount() * this.explosionDamageReduction)));
 		}
 	}

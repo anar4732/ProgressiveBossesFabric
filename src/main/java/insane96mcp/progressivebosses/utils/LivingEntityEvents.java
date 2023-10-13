@@ -2,9 +2,9 @@ package insane96mcp.progressivebosses.utils;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 public interface LivingEntityEvents {
     Event<OnLivingTick> TICK = EventFactory.createArrayBacked(OnLivingTick.class, (listeners) -> (entity) -> {
@@ -14,7 +14,7 @@ public interface LivingEntityEvents {
     });
 
     @FunctionalInterface
-    public interface OnLivingTick {
+    interface OnLivingTick {
         void interact(LivingEntity entity);
     }
 
@@ -25,14 +25,14 @@ public interface LivingEntityEvents {
     });
 
     @FunctionalInterface
-    public interface OnLivingHurt {
+    interface OnLivingHurt {
         void interact(OnLivingHurtEvent event);
     }
 
-    public static class OnLivingHurtEvent {
+    class OnLivingHurtEvent {
         public final DamageSource source;
         public float amount;
-        private LivingEntity entity;
+        private final LivingEntity entity;
 
         public OnLivingHurtEvent(LivingEntity entity, DamageSource source, float amount) {
             this.source = source;
@@ -64,11 +64,11 @@ public interface LivingEntityEvents {
     });
 
     @FunctionalInterface
-    public interface OnLivingDeath {
+    interface OnLivingDeath {
         void interact(OnLivingDeathEvent event);
     }
 
-    public static class OnLivingDeathEvent {
+    class OnLivingDeathEvent {
         public final LivingEntity entity;
         public final DamageSource source;
 

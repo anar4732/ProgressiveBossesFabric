@@ -6,27 +6,25 @@ import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingHurtEvent;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.PaneBlock;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.boss.dragon.phase.Phase;
-import net.minecraft.entity.boss.dragon.phase.PhaseType;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.decoration.EndCrystalEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.Registries;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.World;
-import net.minecraft.world.explosion.Explosion;
-import net.minecraft.world.gen.feature.EndPortalFeature;
-import net.minecraft.world.gen.feature.EndSpikeFeature;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.IronBarsBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.feature.EndPodiumFeature;
+import net.minecraft.world.level.levelgen.feature.SpikeFeature;
+import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -74,19 +72,19 @@ public class CrystalFeature implements LabelConfigGroup {
 	}
 
 	@ConfigEntries.Exclude
-	private static final List<PhaseType<? extends Phase>> VALID_CRYSTAL_RESPAWN_PHASES = Arrays.asList(PhaseType.SITTING_SCANNING, PhaseType.SITTING_ATTACKING, PhaseType.SITTING_FLAMING, PhaseType.HOLDING_PATTERN, PhaseType.TAKEOFF, PhaseType.CHARGING_PLAYER, PhaseType.STRAFE_PLAYER);
+	private static final List<EnderDragonPhase<? extends DragonPhaseInstance>> VALID_CRYSTAL_RESPAWN_PHASES = Arrays.asList(EnderDragonPhase.SITTING_SCANNING, EnderDragonPhase.SITTING_ATTACKING, EnderDragonPhase.SITTING_FLAMING, EnderDragonPhase.HOLDING_PATTERN, EnderDragonPhase.TAKEOFF, EnderDragonPhase.CHARGING_PLAYER, EnderDragonPhase.STRAFE_PLAYER);
 
 	public void onDragonDamage(OnLivingHurtEvent event) {
-		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
+		if (!(event.getEntity() instanceof EnderDragon dragon))
 			return;
 
 		if (!this.enableCrystalRespawn)
 			return;
 
-		NbtCompound dragonTags = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag dragonTags = ((IEntityExtraData) dragon).getPersistentData();
 		float difficulty = dragonTags.getFloat(Strings.Tags.DIFFICULTY);
 
-		if (!VALID_CRYSTAL_RESPAWN_PHASES.contains(dragon.getPhaseManager().getCurrent().getType()))
+		if (!VALID_CRYSTAL_RESPAWN_PHASES.contains(dragon.getPhaseManager().getCurrentPhase().getPhase()))
 			return;
 
 		float healthRatio = dragon.getHealth() / dragon.getMaxHealth();
@@ -106,18 +104,18 @@ public class CrystalFeature implements LabelConfigGroup {
 
 		dragonTags.putByte(Strings.Tags.CRYSTAL_RESPAWN, (byte) (crystalRespawn + 1));
 
-		double crystalsRespawned = MathHelper.clamp(difficulty * this.crystalRespawnPerDifficulty, 0, EndSpikeFeature.field_31516);
+		double crystalsRespawned = Mth.clamp(difficulty * this.crystalRespawnPerDifficulty, 0, SpikeFeature.NUMBER_OF_SPIKES);
 		crystalsRespawned = Utils.getAmountWithDecimalChance(dragon.getRandom(), crystalsRespawned);
 		if (crystalsRespawned == 0d)
 			return;
 
 		dragon.getPhaseManager().setPhase(CrystalRespawnPhase.getPhaseType());
-		CrystalRespawnPhase phase = (CrystalRespawnPhase) dragon.getPhaseManager().getCurrent();
+		CrystalRespawnPhase phase = (CrystalRespawnPhase) dragon.getPhaseManager().getCurrentPhase();
 
-		List<EndSpikeFeature.Spike> spikes = new ArrayList<>(EndSpikeFeature.getSpikes((ServerWorld)dragon.world));
-		spikes.sort(Comparator.comparingInt(EndSpikeFeature.Spike::getRadius).reversed());
+		List<SpikeFeature.EndSpike> spikes = new ArrayList<>(SpikeFeature.getSpikesForLevel((ServerLevel)dragon.level));
+		spikes.sort(Comparator.comparingInt(SpikeFeature.EndSpike::getRadius).reversed());
 		for (int i = 0; i < crystalsRespawned; i++) {
-			EndSpikeFeature.Spike targetSpike = spikes.get(i);
+			SpikeFeature.EndSpike targetSpike = spikes.get(i);
 			phase.addCrystalRespawn(targetSpike);
 		}
 	}
@@ -126,54 +124,54 @@ public class CrystalFeature implements LabelConfigGroup {
 	 * Returns a percentage value (0~1) based off a min and max value. when value >= max the chance is 0%, when value <= min the chance is 100%. In-between the threshold, chance scales accordingly
 	 */
 	private float getChanceAtValue(float value, float max, float min) {
-		return MathHelper.clamp((max - min - (value - min)) / (max - min), 0f, 1f);
+		return Mth.clamp((max - min - (value - min)) / (max - min), 0f, 1f);
 	}
 
 	public void onSpawn(DummyEvent event) {
-		if (event.getWorld().isClient)
+		if (event.getWorld().isClientSide)
 			return;
 
-		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
+		if (!(event.getEntity() instanceof EnderDragon dragon))
 			return;
 
-		NbtCompound dragonTags = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag dragonTags = ((IEntityExtraData) dragon).getPersistentData();
 		float difficulty = dragonTags.getFloat(Strings.Tags.DIFFICULTY);
 
 		crystalCages(dragon, difficulty);
 		moreCrystals(dragon, difficulty);
 	}
 
-	private void crystalCages(EnderDragonEntity dragon, float difficulty) {
+	private void crystalCages(EnderDragon dragon, float difficulty) {
 		if (this.moreCagesAtDifficulty == -1 || this.maxBonusCages == 0)
 			return;
 
 		if (difficulty < moreCagesAtDifficulty)
 			return;
 
-		NbtCompound dragonTags = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag dragonTags = ((IEntityExtraData) dragon).getPersistentData();
 		if (dragonTags.contains(Strings.Tags.CRYSTAL_CAGES))
 			return;
 
 		dragonTags.putBoolean(Strings.Tags.CRYSTAL_CAGES, true);
 
-		List<EndCrystalEntity> crystals = new ArrayList<>();
+		List<EndCrystal> crystals = new ArrayList<>();
 
 		//Order from smaller towers to bigger ones
-		List<EndSpikeFeature.Spike> spikes = new ArrayList<>(EndSpikeFeature.getSpikes((ServerWorld) dragon.world));
-		spikes.sort(Comparator.comparingInt(EndSpikeFeature.Spike::getRadius));
+		List<SpikeFeature.EndSpike> spikes = new ArrayList<>(SpikeFeature.getSpikesForLevel((ServerLevel) dragon.level));
+		spikes.sort(Comparator.comparingInt(SpikeFeature.EndSpike::getRadius));
 
-		for(EndSpikeFeature.Spike spike : spikes) {
-			crystals.addAll(dragon.world.getNonSpectatingEntities(EndCrystalEntity.class, spike.getBoundingBox()));
+		for(SpikeFeature.EndSpike spike : spikes) {
+			crystals.addAll(dragon.level.getEntitiesOfClass(EndCrystal.class, spike.getTopBoundingBox()));
 		}
 
 		//Remove all the crystals that already have cages around
-		crystals.removeIf(c -> c.world.getBlockState(c.getBlockPos().up(2)).getBlock() == Blocks.IRON_BARS);
+		crystals.removeIf(c -> c.level.getBlockState(c.blockPosition().above(2)).getBlock() == Blocks.IRON_BARS);
 
 		int crystalsInvolved = Math.round(difficulty - this.moreCagesAtDifficulty + 1);
 		int cagesGenerated = 0;
 
-		for (EndCrystalEntity crystal : crystals) {
-			generateCage(crystal.world, crystal.getBlockPos());
+		for (EndCrystal crystal : crystals) {
+			generateCage(crystal.level, crystal.blockPosition());
 
 			cagesGenerated++;
 			if (cagesGenerated == crystalsInvolved || cagesGenerated == this.maxBonusCages)
@@ -181,27 +179,27 @@ public class CrystalFeature implements LabelConfigGroup {
 		}
 	}
 
-	private void moreCrystals(EnderDragonEntity dragon, float difficulty) {
+	private void moreCrystals(EnderDragon dragon, float difficulty) {
 		if (this.moreCrystalsAtDifficulty == -1 || this.moreCrystalsMax == 0)
 			return;
 
 		if (difficulty < this.moreCrystalsAtDifficulty)
 			return;
 
-		NbtCompound dragonTags = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag dragonTags = ((IEntityExtraData) dragon).getPersistentData();
 		if (dragonTags.contains(Strings.Tags.MORE_CRYSTALS))
 			return;
 
 		dragonTags.putBoolean(Strings.Tags.MORE_CRYSTALS, true);
 
-		List<EndCrystalEntity> crystals = new ArrayList<>();
+		List<EndCrystal> crystals = new ArrayList<>();
 
 		//Order from smaller towers to bigger ones
-		List<EndSpikeFeature.Spike> spikes = new ArrayList<>(EndSpikeFeature.getSpikes((ServerWorld) dragon.world));
-		spikes.sort(Comparator.comparingInt(EndSpikeFeature.Spike::getRadius));
+		List<SpikeFeature.EndSpike> spikes = new ArrayList<>(SpikeFeature.getSpikesForLevel((ServerLevel) dragon.level));
+		spikes.sort(Comparator.comparingInt(SpikeFeature.EndSpike::getRadius));
 
-		for(EndSpikeFeature.Spike spike : spikes) {
-			crystals.addAll(dragon.world.getEntitiesByClass(EndCrystalEntity.class, spike.getBoundingBox(), EndCrystalEntity::shouldShowBottom));
+		for(SpikeFeature.EndSpike spike : spikes) {
+			crystals.addAll(dragon.level.getEntitiesOfClass(EndCrystal.class, spike.getTopBoundingBox(), EndCrystal::showsBottom));
 		}
 
 		int crystalsMax = (int) Math.ceil((difficulty + 1 - this.moreCrystalsAtDifficulty) / this.moreCrystalsStep);
@@ -209,8 +207,8 @@ public class CrystalFeature implements LabelConfigGroup {
 			return;
 		int crystalSpawned = 0;
 
-		for (EndCrystalEntity crystal : crystals) {
-			generateCrystalInTower(dragon.world, crystal.getX(), crystal.getY(), crystal.getZ());
+		for (EndCrystal crystal : crystals) {
+			generateCrystalInTower(dragon.level, crystal.getX(), crystal.getY(), crystal.getZ());
 
 			crystalSpawned++;
 			if (crystalSpawned == crystalsMax || crystalSpawned == this.moreCrystalsMax)
@@ -218,7 +216,7 @@ public class CrystalFeature implements LabelConfigGroup {
 		}
 	}
 
-	public boolean onDamageFromExplosion(EndCrystalEntity enderCrystalEntity, DamageSource source) {
+	public boolean onDamageFromExplosion(EndCrystal enderCrystalEntity, DamageSource source) {
 		if (!this.isEnabled())
 			return false;
 
@@ -229,50 +227,50 @@ public class CrystalFeature implements LabelConfigGroup {
 	}
 
 	@ConfigEntries.Exclude
-	private static final Identifier ENDERGETIC_CRYSTAL_HOLDER_RL = new Identifier("endergetic:crystal_holder");
+	private static final ResourceLocation ENDERGETIC_CRYSTAL_HOLDER_RL = new ResourceLocation("endergetic:crystal_holder");
 
-	public static EndCrystalEntity generateCrystalInTower(World world, double x, double y, double z) {
-		Vec3d centerPodium = Vec3d.ofBottomCenter(world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, EndPortalFeature.ORIGIN));
+	public static EndCrystal generateCrystalInTower(Level world, double x, double y, double z) {
+		Vec3 centerPodium = Vec3.atBottomCenterOf(world.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.END_PODIUM_LOCATION));
 
 		int spawnY = (int) (y - RandomHelper.getInt(world.getRandom(), 12, 24));
-		if (spawnY < centerPodium.getY())
-			spawnY = (int) centerPodium.getY();
+		if (spawnY < centerPodium.y())
+			spawnY = (int) centerPodium.y();
 		BlockPos crystalPos = new BlockPos(x, spawnY, z);
 
-		Stream<BlockPos> blocks = BlockPos.stream(crystalPos.add(-1, -1, -1), crystalPos.add(1, 1, 1));
+		Stream<BlockPos> blocks = BlockPos.betweenClosedStream(crystalPos.offset(-1, -1, -1), crystalPos.offset(1, 1, 1));
 
-		blocks.forEach(pos -> world.setBlockState(pos, Blocks.AIR.getDefaultState()));
+		blocks.forEach(pos -> world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState()));
 
-		BlockState baseBlockState = Blocks.BEDROCK.getDefaultState();
+		BlockState baseBlockState = Blocks.BEDROCK.defaultBlockState();
 		// if (ModList.get().isLoaded("endergetic"))
-			if (Registries.BLOCK.containsId(ENDERGETIC_CRYSTAL_HOLDER_RL))
-				baseBlockState = Registries.BLOCK.get(ENDERGETIC_CRYSTAL_HOLDER_RL).getDefaultState();
+			if (BuiltInRegistries.BLOCK.containsKey(ENDERGETIC_CRYSTAL_HOLDER_RL))
+				baseBlockState = BuiltInRegistries.BLOCK.get(ENDERGETIC_CRYSTAL_HOLDER_RL).defaultBlockState();
 			// else
 				// LogHelper.warn("The Endergetic Expansion is loaded but the %s block was not registered", ENDERGETIC_CRYSTAL_HOLDER_RL);
-		world.setBlockState(crystalPos.add(0, -1, 0), baseBlockState);
+		world.setBlockAndUpdate(crystalPos.offset(0, -1, 0), baseBlockState);
 
-		world.createExplosion(null, crystalPos.getX() + .5f, crystalPos.getY(), crystalPos.getZ() + .5, 5f, World.ExplosionSourceType.MOB);
+		world.explode(null, crystalPos.getX() + .5f, crystalPos.getY(), crystalPos.getZ() + .5, 5f, Level.ExplosionInteraction.MOB);
 
-		EndCrystalEntity crystal = new EndCrystalEntity(world, crystalPos.getX() + .5, crystalPos.getY(), crystalPos.getZ() + .5);
-		world.spawnEntity(crystal);
+		EndCrystal crystal = new EndCrystal(world, crystalPos.getX() + .5, crystalPos.getY(), crystalPos.getZ() + .5);
+		world.addFreshEntity(crystal);
 
 		return crystal;
 	}
 
-	public static void generateCage(World world, BlockPos pos) {
+	public static void generateCage(Level world, BlockPos pos) {
 		//Shamelessly copied from Vanilla Code
-		BlockPos.Mutable blockpos$mutable = new BlockPos.Mutable();
+		BlockPos.MutableBlockPos blockpos$mutable = new BlockPos.MutableBlockPos();
 		for(int k = -2; k <= 2; ++k) {
 			for(int l = -2; l <= 2; ++l) {
 				for(int i1 = 0; i1 <= 3; ++i1) {
-					boolean flag = MathHelper.abs(k) == 2;
-					boolean flag1 = MathHelper.abs(l) == 2;
+					boolean flag = Mth.abs(k) == 2;
+					boolean flag1 = Mth.abs(l) == 2;
 					boolean flag2 = i1 == 3;
 					if (flag || flag1 || flag2) {
 						boolean flag3 = k == -2 || k == 2 || flag2;
 						boolean flag4 = l == -2 || l == 2 || flag2;
-						BlockState blockstate = Blocks.IRON_BARS.getDefaultState().with(PaneBlock.NORTH, flag3 && l != -2).with(PaneBlock.SOUTH, flag3 && l != 2).with(PaneBlock.WEST, flag4 && k != -2).with(PaneBlock.EAST, flag4 && k != 2);
-						world.setBlockState(blockpos$mutable.set(pos.getX() + k, pos.getY() - 1 + i1, pos.getZ() + l), blockstate);
+						BlockState blockstate = Blocks.IRON_BARS.defaultBlockState().setValue(IronBarsBlock.NORTH, flag3 && l != -2).setValue(IronBarsBlock.SOUTH, flag3 && l != 2).setValue(IronBarsBlock.WEST, flag4 && k != -2).setValue(IronBarsBlock.EAST, flag4 && k != 2);
+						world.setBlockAndUpdate(blockpos$mutable.set(pos.getX() + k, pos.getY() - 1 + i1, pos.getZ() + l), blockstate);
 					}
 				}
 			}

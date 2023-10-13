@@ -1,15 +1,11 @@
 package insane96mcp.progressivebosses.module.wither.feature;
 
-import insane96mcp.progressivebosses.utils.IEntityExtraData;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
-import insane96mcp.progressivebosses.utils.Strings;
+import insane96mcp.progressivebosses.utils.*;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingHurtEvent;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
-import net.minecraft.entity.boss.WitherEntity;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Resistances & Vulnerabilities", description = "Handles the Damage Resistances and Vulnerabilities")
@@ -41,7 +37,7 @@ public class ResistancesFeature implements LabelConfigGroup {
 	}
 
 	public void onWitherDamage(OnLivingHurtEvent event) {
-		if (!(event.getEntity() instanceof WitherEntity wither))
+		if (!(event.getEntity() instanceof WitherBoss wither))
 			return;
 
 		if ((this.meleeDamageReductionOnHalfHealth == 0d || this.maxDamageReductionOnHalfHealth == 0d)
@@ -55,14 +51,14 @@ public class ResistancesFeature implements LabelConfigGroup {
 			event.setAmount((event.getAmount() * (float) (missingHealth / (this.magicDamageBonus) + 1)));
 		}
 
-		if (event.getSource().getAttacker() != event.getSource().getSource())
+		if (event.getSource().getEntity() != event.getSource().getDirectEntity())
 			return;
 
-		NbtCompound tags = ((IEntityExtraData) wither).getPersistentData();
+		CompoundTag tags = ((IEntityExtraData) wither).getPersistentData();
 		float difficulty = tags.getFloat(Strings.Tags.DIFFICULTY);
 		//Handle Damage Reduction
 		float damageReduction;
-		if (!wither.shouldRenderOverlay())
+		if (!wither.isPowered())
 			damageReduction = (float) Math.min(this.maxMeleeDamageReductionBeforeHalfHealth, difficulty * this.meleeDamageReductionBeforeHalfHealth);
 		else
 			damageReduction = (float) Math.min(this.maxDamageReductionOnHalfHealth, difficulty * this.meleeDamageReductionOnHalfHealth);

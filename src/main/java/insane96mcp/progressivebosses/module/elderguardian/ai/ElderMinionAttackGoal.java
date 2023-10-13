@@ -1,30 +1,30 @@
 package insane96mcp.progressivebosses.module.elderguardian.ai;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.mob.ElderGuardianEntity;
-import net.minecraft.entity.mob.GuardianEntity;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.monster.ElderGuardian;
+import net.minecraft.world.entity.monster.Guardian;
 import java.util.EnumSet;
 
 public class ElderMinionAttackGoal extends Goal {
-	private final GuardianEntity guardian;
+	private final Guardian guardian;
 	private int attackTime;
 	private final boolean elder;
 
-	public ElderMinionAttackGoal(GuardianEntity p_i45833_1_) {
+	public ElderMinionAttackGoal(Guardian p_i45833_1_) {
 		this.guardian = p_i45833_1_;
-		this.elder = p_i45833_1_ instanceof ElderGuardianEntity;
-		this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK));
+		this.elder = p_i45833_1_ instanceof ElderGuardian;
+		this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
 	}
 
 	/**
 	 * Returns whether execution should begin. You can also read and cache any state necessary for execution in this
 	 * method as well.
 	 */
-	public boolean canStart() {
+	public boolean canUse() {
 		LivingEntity livingentity = this.guardian.getTarget();
 		return livingentity != null && livingentity.isAlive();
 	}
@@ -32,8 +32,8 @@ public class ElderMinionAttackGoal extends Goal {
 	/**
 	 * Returns whether an in-progress EntityAIBase should continue executing
 	 */
-	public boolean shouldContinue() {
-		return super.shouldContinue() && (this.elder || this.guardian.squaredDistanceTo(this.guardian.getTarget()) > 9.0D);
+	public boolean canContinueToUse() {
+		return super.canContinueToUse() && (this.elder || this.guardian.distanceToSqr(this.guardian.getTarget()) > 9.0D);
 	}
 
 	/**
@@ -42,15 +42,15 @@ public class ElderMinionAttackGoal extends Goal {
 	public void start() {
 		this.attackTime = -10;
 		this.guardian.getNavigation().stop();
-		this.guardian.getLookControl().lookAt(this.guardian.getTarget(), 90.0F, 90.0F);
-		this.guardian.velocityDirty = true;
+		this.guardian.getLookControl().setLookAt(this.guardian.getTarget(), 90.0F, 90.0F);
+		this.guardian.hasImpulse = true;
 	}
 
 	/**
 	 * Reset the task's internal state. Called when this task is interrupted by another one
 	 */
 	public void stop() {
-		this.guardian.setBeamTarget(0);
+		this.guardian.setActiveAttackTarget(0);
 		this.guardian.setTarget(null);
 	}
 
@@ -60,16 +60,16 @@ public class ElderMinionAttackGoal extends Goal {
 	public void tick() {
 		LivingEntity livingentity = this.guardian.getTarget();
 		this.guardian.getNavigation().stop();
-		this.guardian.getLookControl().lookAt(livingentity, 90.0F, 90.0F);
+		this.guardian.getLookControl().setLookAt(livingentity, 90.0F, 90.0F);
 		++this.attackTime;
 		if (this.attackTime == 0) {
-			this.guardian.setBeamTarget(this.guardian.getTarget().getId());
+			this.guardian.setActiveAttackTarget(this.guardian.getTarget().getId());
 			if (!this.guardian.isSilent()) {
-				this.guardian.world.sendEntityStatus(this.guardian, (byte)21);
+				this.guardian.level.broadcastEntityEvent(this.guardian, (byte)21);
 			}
-		} else if (this.attackTime >= this.guardian.getWarmupTime()) {
+		} else if (this.attackTime >= this.guardian.getAttackDuration()) {
 			float f = 1.0F;
-			if (this.guardian.world.getDifficulty() == Difficulty.HARD) {
+			if (this.guardian.level.getDifficulty() == Difficulty.HARD) {
 				f += 2.0F;
 			}
 
@@ -77,8 +77,8 @@ public class ElderMinionAttackGoal extends Goal {
 				f += 2.0F;
 			}
 
-			livingentity.damage(DamageSource.magic(this.guardian, this.guardian), f);
-			livingentity.damage(DamageSource.mob(this.guardian), (float)this.guardian.getAttributeValue(EntityAttributes.GENERIC_ATTACK_DAMAGE));
+			livingentity.hurt(DamageSource.magic(this.guardian, this.guardian), f);
+			livingentity.hurt(DamageSource.mob(this.guardian), (float)this.guardian.getAttributeValue(Attributes.ATTACK_DAMAGE));
 			this.guardian.setTarget(null);
 		}
 

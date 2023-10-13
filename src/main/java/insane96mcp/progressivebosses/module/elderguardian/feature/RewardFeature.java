@@ -1,19 +1,14 @@
 package insane96mcp.progressivebosses.module.elderguardian.feature;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import insane96mcp.progressivebosses.utils.Drop;
-import insane96mcp.progressivebosses.utils.DummyEvent;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.*;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingDeathEvent;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.entity.mob.ElderGuardianEntity;
+import net.minecraft.world.entity.monster.ElderGuardian;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Rewards", description = "Bonus Experience and Dragon Egg per player")
@@ -38,7 +33,7 @@ public class RewardFeature implements LabelConfigGroup {
 			"chance_mode:\n" +
 			"* FLAT: chance is the percentage chance for the item to drop if the difficulty criteria matches\n" +
 			"* SCALING: each point of difficulty >= 'difficulty to drop the item' will be multiplied by the chance (e.g. chance 2% and difficulty 10, difficulty required 5, chance to drop the item will be chance * (difficulty - difficulty_required + 1) = 2% * (10 - 5 + 1) = 12%)\n")
-	private static List<String> dropsListConfig = Arrays.asList("minecraft:wet_sponge,1,0,1,MINIMUM,FLAT", "minecraft:wet_sponge,2,1,1,MINIMUM,FLAT", "minecraft:wet_sponge,2,2,1,MINIMUM,FLAT", "progressivebosses:elder_guardian_spike,1,0,1,MINIMUM,FLAT");
+	private static final List<String> dropsListConfig = Arrays.asList("minecraft:wet_sponge,1,0,1,MINIMUM,FLAT", "minecraft:wet_sponge,2,1,1,MINIMUM,FLAT", "minecraft:wet_sponge,2,2,1,MINIMUM,FLAT", "progressivebosses:elder_guardian_spike,1,0,1,MINIMUM,FLAT");
 	
 	@ConfigEntries.Exclude
 	public ArrayList<Drop> dropsList;
@@ -52,18 +47,18 @@ public class RewardFeature implements LabelConfigGroup {
 	}
 
 	public void onSpawn(DummyEvent event) {
-		if (event.getWorld().isClient)
+		if (event.getWorld().isClientSide)
 			return;
 
 		if (this.baseExperience == 0d)
 			return;
 
-		if (!(event.getEntity() instanceof ElderGuardianEntity))
+		if (!(event.getEntity() instanceof ElderGuardian))
 			return;
 
-		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
+		ElderGuardian elderGuardian = (ElderGuardian) event.getEntity();
 
-		elderGuardian.experiencePoints = (int) (this.baseExperience * this.bonusExperience);
+		elderGuardian.xpReward = (int) (this.baseExperience * this.bonusExperience);
 	}
 
 	// public void onExperienceDrop(LivingExperienceDropEvent event) {
@@ -81,13 +76,13 @@ public class RewardFeature implements LabelConfigGroup {
 		if (this.dropsList.isEmpty())
 			return;
 
-		if (!(event.getEntity() instanceof ElderGuardianEntity))
+		if (!(event.getEntity() instanceof ElderGuardian))
 			return;
 
-		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
+		ElderGuardian elderGuardian = (ElderGuardian) event.getEntity();
 
 		for (Drop drop : this.dropsList) {
-			drop.drop(elderGuardian.world, elderGuardian.getPos(), BaseFeature.getDeadElderGuardians(elderGuardian));
+			drop.drop(elderGuardian.level, elderGuardian.position(), BaseFeature.getDeadElderGuardians(elderGuardian));
 		}
 	}
 }

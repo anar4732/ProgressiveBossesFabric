@@ -7,15 +7,14 @@ import insane96mcp.progressivebosses.utils.*;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.entity.boss.WitherEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.Registries;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.TranslatableTextContent;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.phys.AABB;
 import java.util.Arrays;
 import java.util.List;
 
@@ -72,36 +71,36 @@ public class DifficultyFeature implements LabelConfigGroup {
 	}
 
 	public void onSpawn(DummyEvent event) {
-		if (event.getWorld().isClient)
+		if (event.getWorld().isClientSide)
 			return;
 
-		if (!(event.getEntity() instanceof WitherEntity wither))
+		if (!(event.getEntity() instanceof WitherBoss wither))
 			return;
 
-		if (this.entityBlacklist.contains(Registries.ENTITY_TYPE.getId(event.getEntity().getType()).toString()))
+		if (this.entityBlacklist.contains(BuiltInRegistries.ENTITY_TYPE.getKey(event.getEntity().getType()).toString()))
 			return;
 
-		NbtCompound witherTags = ((IEntityExtraData) wither).getPersistentData();
+		CompoundTag witherTags = ((IEntityExtraData) wither).getPersistentData();
 		if (witherTags.contains(Strings.Tags.DIFFICULTY))
 			return;
 
-		BlockPos pos1 = wither.getBlockPos().add(-this.spawnRadiusPlayerCheck, -this.spawnRadiusPlayerCheck, -this.spawnRadiusPlayerCheck);
-		BlockPos pos2 = wither.getBlockPos().add(this.spawnRadiusPlayerCheck, this.spawnRadiusPlayerCheck, this.spawnRadiusPlayerCheck);
-		Box bb = new Box(pos1, pos2);
+		BlockPos pos1 = wither.blockPosition().offset(-this.spawnRadiusPlayerCheck, -this.spawnRadiusPlayerCheck, -this.spawnRadiusPlayerCheck);
+		BlockPos pos2 = wither.blockPosition().offset(this.spawnRadiusPlayerCheck, this.spawnRadiusPlayerCheck, this.spawnRadiusPlayerCheck);
+		AABB bb = new AABB(pos1, pos2);
 
-		List<ServerPlayerEntity> players = event.getWorld().getEntitiesByClass(ServerPlayerEntity.class, bb, player -> player.isAlive());
+		List<ServerPlayer> players = event.getWorld().getEntitiesOfClass(ServerPlayer.class, bb, player -> player.isAlive());
 		if (players.size() == 0)
 			return;
 
 		final AtomicDouble witherDifficulty = new AtomicDouble(0d);
 
-		for (ServerPlayerEntity player : players) {
+		for (ServerPlayer player : players) {
 			AComponents.DF.maybeGet(player).ifPresent(difficulty -> {
 				witherDifficulty.addAndGet(difficulty.getSpawnedWithers());
 				if (difficulty.getSpawnedWithers() >= this.maxDifficulty)
 					return;
 				if (difficulty.getSpawnedWithers() <= this.startingDifficulty && this.showFirstSummonedWitherMessage)
-					player.sendMessage(MutableText.of(new TranslatableTextContent(Strings.Translatable.FIRST_WITHER_SUMMON)), false);
+					player.displayClientMessage(MutableComponent.create(new TranslatableContents(Strings.Translatable.FIRST_WITHER_SUMMON)), false);
 				difficulty.addSpawnedWithers(1);
 				System.out.println("[Progressive Bosses] Player " + player.getName().getString() + " spawned a Wither. Difficulty: " + difficulty.getSpawnedWithers());
 			});
@@ -117,13 +116,13 @@ public class DifficultyFeature implements LabelConfigGroup {
 	}
 
 	public void setPlayerData(DummyEvent event) {
-		if (event.getWorld().isClient)
+		if (event.getWorld().isClientSide)
 			return;
 
-		if (!(event.getEntity() instanceof ServerPlayerEntity))
+		if (!(event.getEntity() instanceof ServerPlayer))
 			return;
 
-		ServerPlayerEntity player = (ServerPlayerEntity) event.getEntity();
+		ServerPlayer player = (ServerPlayer) event.getEntity();
 
 		if (!AComponents.DF.maybeGet(player).isPresent()) {
 			CardinalEntityInternals.createEntityComponentContainer(player);

@@ -1,19 +1,13 @@
 package insane96mcp.progressivebosses.module.elderguardian.feature;
 
-import insane96mcp.progressivebosses.utils.DummyEvent;
-import insane96mcp.progressivebosses.utils.IEntityExtraData;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
-import insane96mcp.progressivebosses.utils.MCUtils;
-import insane96mcp.progressivebosses.utils.Strings;
+import insane96mcp.progressivebosses.utils.*;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.entity.attribute.EntityAttributeModifier;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.mob.ElderGuardianEntity;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.ElderGuardian;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Health", description = "Bonus Health and Health regeneration.")
@@ -35,31 +29,31 @@ public class HealthFeature implements LabelConfigGroup {
 	public HealthFeature(LabelConfigGroup parent) {
 		parent.addConfigContainer(this);
 		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> this.onSpawn(new DummyEvent(world, entity)));
-		LivingEntityEvents.TICK.register((entity) -> this.onUpdate(new DummyEvent(entity.world, entity)));
+		LivingEntityEvents.TICK.register((entity) -> this.onUpdate(new DummyEvent(entity.level, entity)));
 
 	}
 
 	public void onSpawn(DummyEvent event) {
-		if (event.getWorld().isClient)
+		if (event.getWorld().isClientSide)
 			return;
 
 		if (this.bonusHealth == 0d && this.absorptionHealth == 0d)
 			return;
 
-		if (!(event.getEntity() instanceof ElderGuardianEntity))
+		if (!(event.getEntity() instanceof ElderGuardian))
 			return;
 
-		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
-		NbtCompound nbt = ((IEntityExtraData) elderGuardian).getPersistentData();
+		ElderGuardian elderGuardian = (ElderGuardian) event.getEntity();
+		CompoundTag nbt = ((IEntityExtraData) elderGuardian).getPersistentData();
 		if (nbt.getBoolean(Strings.Tags.DIFFICULTY))
 			return;
 
 		nbt.putBoolean(Strings.Tags.DIFFICULTY, true);
 
 		if (this.bonusHealth > 0d) {
-			if (elderGuardian.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).getModifier(Strings.AttributeModifiers.BONUS_HEALTH_UUID) != null)
+			if (elderGuardian.getAttribute(Attributes.MAX_HEALTH).getModifier(Strings.AttributeModifiers.BONUS_HEALTH_UUID) != null)
 				return;
-			MCUtils.applyModifier(elderGuardian, EntityAttributes.GENERIC_MAX_HEALTH, Strings.AttributeModifiers.BONUS_HEALTH_UUID, Strings.AttributeModifiers.BONUS_HEALTH, this.bonusHealth, EntityAttributeModifier.Operation.MULTIPLY_BASE);
+			MCUtils.applyModifier(elderGuardian, Attributes.MAX_HEALTH, Strings.AttributeModifiers.BONUS_HEALTH_UUID, Strings.AttributeModifiers.BONUS_HEALTH, this.bonusHealth, AttributeModifier.Operation.MULTIPLY_BASE);
 		}
 
 		if (this.absorptionHealth > 0d)
@@ -67,16 +61,16 @@ public class HealthFeature implements LabelConfigGroup {
 	}
 
 	public void onUpdate(DummyEvent event) {
-		if (event.getEntity().world.isClient)
+		if (event.getEntity().level.isClientSide)
 			return;
 
-		if (!(event.getEntity() instanceof ElderGuardianEntity))
+		if (!(event.getEntity() instanceof ElderGuardian))
 			return;
 
 		if (this.healthRegen == 0d)
 			return;
 
-		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
+		ElderGuardian elderGuardian = (ElderGuardian) event.getEntity();
 
 		if (!elderGuardian.isAlive())
 			return;

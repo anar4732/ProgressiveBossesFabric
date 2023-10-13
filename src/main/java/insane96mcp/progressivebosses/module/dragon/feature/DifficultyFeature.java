@@ -1,29 +1,21 @@
 package insane96mcp.progressivebosses.module.dragon.feature;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.google.common.util.concurrent.AtomicDouble;
-
 import insane96mcp.progressivebosses.AComponents;
-import insane96mcp.progressivebosses.utils.DummyEvent;
-import insane96mcp.progressivebosses.utils.IEntityExtraData;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.*;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingDeathEvent;
-import insane96mcp.progressivebosses.utils.LogHelper;
-import insane96mcp.progressivebosses.utils.Strings;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.TranslatableTextContent;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.phys.AABB;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Difficulty Settings", description = "How difficulty is handled for the Dragon.")
@@ -55,28 +47,28 @@ public class DifficultyFeature implements LabelConfigGroup {
 	}
 
 	public void onSpawn(DummyEvent event) {
-		if (event.getWorld().isClient)
+		if (event.getWorld().isClientSide)
 			return;
 
 		// if (!event.getWorld().getRegistryKey().getValue().equals(DimensionType.THE_END_REGISTRY_KEY.getValue()))
 		// 	return;
 
-		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
+		if (!(event.getEntity() instanceof EnderDragon dragon))
 			return;
 
-		if (dragon.getFight() == null)
+		if (dragon.getDragonFight() == null)
 			return;
 
-		NbtCompound dragonTags = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag dragonTags = ((IEntityExtraData) dragon).getPersistentData();
 		if (dragonTags.contains(Strings.Tags.DIFFICULTY))
 			return;
 
 		int radius = 256;
 		BlockPos pos1 = new BlockPos(-radius, -radius, -radius);
 		BlockPos pos2 = new BlockPos(radius, radius, radius);
-		Box bb = new Box(pos1, pos2);
+		AABB bb = new AABB(pos1, pos2);
 
-		List<ServerPlayerEntity> players = event.getWorld().getEntitiesByClass(ServerPlayerEntity.class, bb, (entity) -> true);
+		List<ServerPlayer> players = event.getWorld().getEntitiesOfClass(ServerPlayer.class, bb, (entity) -> true);
 
 		if (players.size() == 0)
 			return;
@@ -84,7 +76,7 @@ public class DifficultyFeature implements LabelConfigGroup {
 		AtomicInteger playersFirstDragon = new AtomicInteger(0);
 		final AtomicDouble dragonDifficulty = new AtomicDouble(0d);
 
-		for (ServerPlayerEntity player : players) {
+		for (ServerPlayer player : players) {
 			AComponents.DF.maybeGet(player).ifPresent(difficulty -> {
 				dragonDifficulty.addAndGet(difficulty.getKilledDragons());
 				if (difficulty.getFirstDragon() == (byte) 1) {
@@ -107,28 +99,28 @@ public class DifficultyFeature implements LabelConfigGroup {
 
 	//Increase Player Difficulty
 	public void onDeath(OnLivingDeathEvent event) {
-		if (event.getEntity().world.isClient)
+		if (event.getEntity().level.isClientSide)
 			return;
 
-		if (!(event.getEntity() instanceof EnderDragonEntity dragon))
+		if (!(event.getEntity() instanceof EnderDragon dragon))
 			return;
 
 		int radius = 256;
 		BlockPos pos1 = new BlockPos(-radius, -radius, -radius);
 		BlockPos pos2 = new BlockPos(radius, radius, radius);
-		Box bb = new Box(pos1, pos2);
+		AABB bb = new AABB(pos1, pos2);
 
-		List<ServerPlayerEntity> players = dragon.world.getNonSpectatingEntities(ServerPlayerEntity.class, bb);
+		List<ServerPlayer> players = dragon.level.getEntitiesOfClass(ServerPlayer.class, bb);
 		//If no players are found in the "Spawn Radius Player Check", try to get the nearest player
-		if (players.size() == 0) {
-			ServerPlayerEntity nearestPlayer = (ServerPlayerEntity) dragon.world.getClosestPlayer(dragon.getX(), dragon.getY(), dragon.getZ(), Double.MAX_VALUE, true);
+		if (players.isEmpty()) {
+			ServerPlayer nearestPlayer = (ServerPlayer) dragon.level.getNearestPlayer(dragon.getX(), dragon.getY(), dragon.getZ(), Double.MAX_VALUE, true);
 			players.add(nearestPlayer);
 		}
 
-		for (ServerPlayerEntity player : players) {
+		for (ServerPlayer player : players) {
 			AComponents.DF.maybeGet(player).ifPresent(difficulty -> {
 				if (difficulty.getKilledDragons() <= this.startingDifficulty && this.showFirstKilledDragonMessage)
-					player.sendMessage(MutableText.of(new TranslatableTextContent(Strings.Translatable.FIRST_DRAGON_KILL)), true);
+					player.displayClientMessage(Component.translatable(Strings.Translatable.FIRST_DRAGON_KILL), true);
 				if (difficulty.getKilledDragons() < this.maxDifficulty)
 					difficulty.addKilledDragons(1);
 			});
@@ -136,10 +128,10 @@ public class DifficultyFeature implements LabelConfigGroup {
 	}
 
 	public void setPlayerData(DummyEvent event) {
-		if (event.getWorld().isClient)
+		if (event.getWorld().isClientSide)
 			return;
 
-		if (!(event.getEntity() instanceof ServerPlayerEntity player))
+		if (!(event.getEntity() instanceof ServerPlayer player))
 			return;
 
 		AComponents.DF.maybeGet(player).ifPresent(difficulty -> {

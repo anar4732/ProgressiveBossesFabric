@@ -1,7 +1,7 @@
 package insane96mcp.progressivebosses.utils;
 
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 
 public interface IEntityExtraData {
-    NbtCompound getPersistentData();
+    CompoundTag getPersistentData();
 }

@@ -5,18 +5,18 @@ import insane96mcp.progressivebosses.utils.ExplosionEvents.OnExplosionEvent;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingDeathEvent;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
-import net.minecraft.entity.mob.ElderGuardianEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.packet.s2c.play.GameStateChangeS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.TranslatableTextContent;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.World;
-import net.minecraft.world.explosion.Explosion;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.monster.ElderGuardian;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Base", description = "Base feature for the Elder Guardian harder fights. Disabling this feature will disable the added sound when an Elder Guardian is killed.")
@@ -33,40 +33,40 @@ public class BaseFeature implements LabelConfigGroup {
 		LivingEntityEvents.DEATH.register((event) -> this.onElderGuardianDeath(event));
 	}
 
-	public void onPlayerTick(PlayerEntity player) {
-		if (player.world.isClient)
+	public void onPlayerTick(Player player) {
+		if (player.level.isClientSide)
 			return;
 
 		if (!this.adventure)
 			return;
 
-		if (player.age % 20 != 0)
+		if (player.tickCount % 20 != 0)
 			return;
 
 		if (!player.isAlive())
 			return;
 
-		ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
-		ServerWorld world = (ServerWorld) serverPlayer.world;
+		ServerPlayer serverPlayer = (ServerPlayer) player;
+		ServerLevel world = (ServerLevel) serverPlayer.level;
 
-		NbtCompound nbt = ((IEntityExtraData) serverPlayer).getPersistentData();
+		CompoundTag nbt = ((IEntityExtraData) serverPlayer).getPersistentData();
 		boolean previouslyNearElderGuardian = nbt.getBoolean(Strings.Tags.PREVIOUSLY_NEAR_ELDER_GUARDIAN);
 		boolean adventureMessage = nbt.getBoolean(Strings.Tags.ADVENTURE_MESSAGE);
 
-		boolean nearElderGuardian = !world.getEntitiesByClass(ElderGuardianEntity.class, serverPlayer.getBoundingBox().expand(32d), entity -> true).isEmpty();
+		boolean nearElderGuardian = !world.getEntitiesOfClass(ElderGuardian.class, serverPlayer.getBoundingBox().inflate(32d), entity -> true).isEmpty();
 		nbt.putBoolean(Strings.Tags.PREVIOUSLY_NEAR_ELDER_GUARDIAN, nearElderGuardian);
 
-		if (serverPlayer.interactionManager.getGameMode() == GameMode.SURVIVAL && nearElderGuardian) {
-			serverPlayer.interactionManager.changeGameMode(GameMode.ADVENTURE);
-			serverPlayer.networkHandler.sendPacket(new GameStateChangeS2CPacket(GameStateChangeS2CPacket.GAME_MODE_CHANGED, (float)GameMode.ADVENTURE.getId()));
+		if (serverPlayer.gameMode.getGameModeForPlayer() == GameType.SURVIVAL && nearElderGuardian) {
+			serverPlayer.gameMode.changeGameModeForPlayer(GameType.ADVENTURE);
+			serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float)GameType.ADVENTURE.getId()));
 			if (!adventureMessage) {
-				serverPlayer.sendMessage(MutableText.of(new TranslatableTextContent(Strings.Translatable.APPROACHING_ELDER_GUARDIAN)), false);
+				serverPlayer.displayClientMessage(MutableComponent.create(new TranslatableContents(Strings.Translatable.APPROACHING_ELDER_GUARDIAN)), false);
 				nbt.putBoolean(Strings.Tags.ADVENTURE_MESSAGE, true);
 			}
 		}
-		else if (serverPlayer.interactionManager.getGameMode() == GameMode.ADVENTURE && !nearElderGuardian && previouslyNearElderGuardian) {
-			serverPlayer.interactionManager.changeGameMode(GameMode.SURVIVAL);
-			serverPlayer.networkHandler.sendPacket(new GameStateChangeS2CPacket(GameStateChangeS2CPacket.GAME_MODE_CHANGED, (float)GameMode.SURVIVAL.getId()));
+		else if (serverPlayer.gameMode.getGameModeForPlayer() == GameType.ADVENTURE && !nearElderGuardian && previouslyNearElderGuardian) {
+			serverPlayer.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
+			serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float)GameType.SURVIVAL.getId()));
 		}
 	}
 
@@ -74,17 +74,17 @@ public class BaseFeature implements LabelConfigGroup {
 		if (!this.adventure)
 			return;
 
-		if (!(event.getEntity() instanceof ServerPlayerEntity))
+		if (!(event.getEntity() instanceof ServerPlayer))
 			return;
 
-		ServerPlayerEntity serverPlayer = (ServerPlayerEntity) event.getEntity();
+		ServerPlayer serverPlayer = (ServerPlayer) event.getEntity();
 
-		NbtCompound nbt = ((IEntityExtraData) serverPlayer).getPersistentData();
+		CompoundTag nbt = ((IEntityExtraData) serverPlayer).getPersistentData();
 		boolean previouslyNearElderGuardian = nbt.getBoolean(Strings.Tags.PREVIOUSLY_NEAR_ELDER_GUARDIAN);
 
-		if (previouslyNearElderGuardian && serverPlayer.interactionManager.getGameMode() == GameMode.ADVENTURE) {
-			serverPlayer.interactionManager.changeGameMode(GameMode.SURVIVAL);
-			serverPlayer.networkHandler.sendPacket(new GameStateChangeS2CPacket(GameStateChangeS2CPacket.GAME_MODE_CHANGED, (float)GameMode.SURVIVAL.getId()));
+		if (previouslyNearElderGuardian && serverPlayer.gameMode.getGameModeForPlayer() == GameType.ADVENTURE) {
+			serverPlayer.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
+			serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float)GameType.SURVIVAL.getId()));
 		}
 	}
 
@@ -92,34 +92,34 @@ public class BaseFeature implements LabelConfigGroup {
 		if (!this.adventure)
 			return;
 
-		if (event.getExplosion().getCausingEntity() == null)
+		if (event.getExplosion().getIndirectSourceEntity() == null)
 			return;
 
-		if (event.getExplosion().destructionType == Explosion.DestructionType.KEEP)
+		if (event.getExplosion().blockInteraction == Explosion.BlockInteraction.KEEP)
 			return;
 
-		boolean nearElderGuardian = !event.getWorld().getEntitiesByClass(ElderGuardianEntity.class, event.getExplosion().getCausingEntity().getBoundingBox().expand(32d), e -> true).isEmpty();
+		boolean nearElderGuardian = !event.getWorld().getEntitiesOfClass(ElderGuardian.class, event.getExplosion().getIndirectSourceEntity().getBoundingBox().inflate(32d), e -> true).isEmpty();
 		if (nearElderGuardian) {
 			event.setCancelled();
-			event.getWorld().createExplosion(event.getExplosion().getCausingEntity(), event.getPosition().x, event.getPosition().y, event.getPosition().z, event.getExplosion().power, event.getExplosion().createFire, World.ExplosionSourceType.MOB);
+			event.getWorld().explode(event.getExplosion().getIndirectSourceEntity(), event.getPosition().x, event.getPosition().y, event.getPosition().z, event.getExplosion().radius, event.getExplosion().fire, Level.ExplosionInteraction.MOB);
 		}
 	}
 
 	public void onElderGuardianDeath(OnLivingDeathEvent event) {
-		if (!(event.getEntity() instanceof ElderGuardianEntity))
+		if (!(event.getEntity() instanceof ElderGuardian))
 			return;
 
-		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
+		ElderGuardian elderGuardian = (ElderGuardian) event.getEntity();
 
-		int elderGuardiansNearby = elderGuardian.world.getOtherEntities(elderGuardian, elderGuardian.getBoundingBox().expand(48d), entity -> entity instanceof ElderGuardianEntity).size();
+		int elderGuardiansNearby = elderGuardian.level.getEntities(elderGuardian, elderGuardian.getBoundingBox().inflate(48d), entity -> entity instanceof ElderGuardian).size();
 		if (elderGuardiansNearby == 0)
 			return;
 
-		elderGuardian.playSound(SoundEvents.ENTITY_ELDER_GUARDIAN_CURSE, 2f, 0.5f);
+		elderGuardian.playSound(SoundEvents.ELDER_GUARDIAN_CURSE, 2f, 0.5f);
 	}
 
-	public static int getDeadElderGuardians(ElderGuardianEntity elderGuardian) {
-		int elderGuardiansNearby = elderGuardian.world.getOtherEntities(elderGuardian, elderGuardian.getBoundingBox().expand(48d), entity -> entity instanceof ElderGuardianEntity).size();
+	public static int getDeadElderGuardians(ElderGuardian elderGuardian) {
+		int elderGuardiansNearby = elderGuardian.level.getEntities(elderGuardian, elderGuardian.getBoundingBox().inflate(48d), entity -> entity instanceof ElderGuardian).size();
 		return 2 - elderGuardiansNearby;
 	}
 }

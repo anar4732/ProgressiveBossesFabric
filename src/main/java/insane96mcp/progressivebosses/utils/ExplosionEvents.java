@@ -2,9 +2,9 @@ package insane96mcp.progressivebosses.utils;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraft.world.explosion.Explosion;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public class ExplosionEvents {
     public static Event<OnExplode> EXPLODE = EventFactory.createArrayBacked(OnExplode.class, (listeners) -> (entity) -> {
@@ -19,7 +19,7 @@ public class ExplosionEvents {
     }
 
     public static class OnExplosionEvent {
-        private Explosion explosion;
+        private final Explosion explosion;
         private boolean cancelled = false;
 
         public OnExplosionEvent(Explosion explosion) {
@@ -30,8 +30,8 @@ public class ExplosionEvents {
             return this.explosion;
         }
 
-        public World getWorld() {
-            return this.explosion.world;
+        public Level getWorld() {
+            return this.explosion.level;
         }
 
         public boolean isCancelled() {
@@ -42,8 +42,8 @@ public class ExplosionEvents {
             this.cancelled = true;
         }
 
-        public Vec3d getPosition() {
-            return new Vec3d(this.explosion.x, this.explosion.y, this.explosion.z);
+        public Vec3 getPosition() {
+            return new Vec3(this.explosion.x, this.explosion.y, this.explosion.z);
         }
     }
 }

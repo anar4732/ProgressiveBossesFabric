@@ -1,48 +1,39 @@
 package insane96mcp.progressivebosses.module.dragon.feature;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Nullable;
-
 import insane96mcp.progressivebosses.module.Modules;
 import insane96mcp.progressivebosses.module.dragon.entity.AreaEffectCloud3DEntity;
-import insane96mcp.progressivebosses.utils.DummyEvent;
-import insane96mcp.progressivebosses.utils.IEntityExtraData;
-import insane96mcp.progressivebosses.utils.Label;
-import insane96mcp.progressivebosses.utils.LabelConfigGroup;
-import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.*;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingHurtEvent;
-import insane96mcp.progressivebosses.utils.RandomHelper;
-import insane96mcp.progressivebosses.utils.Strings;
-import insane96mcp.progressivebosses.utils.Utils;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.entity.AreaEffectCloudEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.boss.dragon.phase.PhaseType;
-import net.minecraft.entity.damage.ProjectileDamageSource;
-import net.minecraft.entity.decoration.EndCrystalEntity;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.DragonFireballEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.predicate.entity.EntityPredicates;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.EndPortalFeature;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.AreaEffectCloud;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySelector;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.DragonFireball;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.feature.EndPodiumFeature;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Attack", description = "Makes the dragon hit harder in various different ways")
@@ -98,24 +89,24 @@ public class AttackFeature implements LabelConfigGroup {
 	}
 
 	private void fireballSpeed(Entity entity) {
-		if (!(entity instanceof DragonFireballEntity fireball))
+		if (!(entity instanceof DragonFireball fireball))
 			return;
 
 		if (!this.isEnabled() || this.fireballVelocityMultiplier == 0d)
 			return;
 
-		if (Math.abs(fireball.powerX) > 10 || Math.abs(fireball.powerY) > 10 || Math.abs(fireball.powerZ) > 10) {
+		if (Math.abs(fireball.xPower) > 10 || Math.abs(fireball.yPower) > 10 || Math.abs(fireball.zPower) > 10) {
 			entity.kill();
 			return;
 		}
 
-		fireball.powerX *= this.fireballVelocityMultiplier;
-		fireball.powerY *= this.fireballVelocityMultiplier;
-		fireball.powerZ *= this.fireballVelocityMultiplier;
+		fireball.xPower *= this.fireballVelocityMultiplier;
+		fireball.yPower *= this.fireballVelocityMultiplier;
+		fireball.zPower *= this.fireballVelocityMultiplier;
 	}
 
 	public void onDamageDealt(OnLivingHurtEvent event) {
-		if (event.getEntity().world.isClient)
+		if (event.getEntity().level.isClientSide)
 			return;
 
 		onDirectDamage(event);
@@ -123,10 +114,10 @@ public class AttackFeature implements LabelConfigGroup {
 	}
 
 	private void onDirectDamage(OnLivingHurtEvent event) {
-		if (!(event.getSource().getSource() instanceof EnderDragonEntity dragon) || event.getEntity() instanceof EnderDragonEntity)
+		if (!(event.getSource().getDirectEntity() instanceof EnderDragon dragon) || event.getEntity() instanceof EnderDragon)
 			return;
 
-		NbtCompound compoundNBT = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag compoundNBT = ((IEntityExtraData) dragon).getPersistentData();
 		float difficulty = compoundNBT.getFloat(Strings.Tags.DIFFICULTY);
 
 		if (difficulty == 0f)
@@ -136,10 +127,10 @@ public class AttackFeature implements LabelConfigGroup {
 	}
 
 	private void onAcidDamage(OnLivingHurtEvent event) {
-		if (!(event.getSource().getSource() instanceof EnderDragonEntity dragon) || !(event.getSource().getAttacker() instanceof AreaEffectCloudEntity))
+		if (!(event.getSource().getDirectEntity() instanceof EnderDragon dragon) || !(event.getSource().getEntity() instanceof AreaEffectCloud))
 			return;
 
-		NbtCompound compoundNBT = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag compoundNBT = ((IEntityExtraData) dragon).getPersistentData();
 		float difficulty = compoundNBT.getFloat(Strings.Tags.DIFFICULTY);
 
 		if (difficulty == 0f)
@@ -148,7 +139,7 @@ public class AttackFeature implements LabelConfigGroup {
 		event.setAmount(event.getAmount() * (float)(1d + (this.increasedAcidPoolDamage * difficulty)));
 	}
 
-	public boolean onPhaseEnd(EnderDragonEntity dragon) {
+	public boolean onPhaseEnd(EnderDragon dragon) {
 		boolean chargePlayer = shouldChargePlayer(dragon);
 		boolean fireballPlayer = shouldFireballPlayer(dragon);
 
@@ -165,24 +156,24 @@ public class AttackFeature implements LabelConfigGroup {
 		return chargePlayer || fireballPlayer;
 	}
 
-	private boolean shouldChargePlayer(EnderDragonEntity dragon) {
+	private boolean shouldChargePlayer(EnderDragon dragon) {
 		if (this.chargePlayerMaxChance == 0f)
 			return false;
 
-		if (dragon.getFight() == null)
+		if (dragon.getDragonFight() == null)
 			return false;
 
-		NbtCompound tags = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag tags = ((IEntityExtraData) dragon).getPersistentData();
 		float difficulty = tags.getFloat(Strings.Tags.DIFFICULTY);
 
 		double chance = this.chargePlayerMaxChance * (difficulty / Modules.dragon.difficulty.maxDifficulty);
 
-		BlockPos centerPodium = dragon.world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, EndPortalFeature.ORIGIN);
-		Box boundingBox = new Box(centerPodium).expand(64d);
-		List<PlayerEntity> players = dragon.world.getEntitiesByClass(PlayerEntity.class, boundingBox, EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR);
+		BlockPos centerPodium = dragon.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.END_PODIUM_LOCATION);
+		AABB boundingBox = new AABB(centerPodium).inflate(64d);
+		List<Player> players = dragon.level.getEntitiesOfClass(Player.class, boundingBox, EntitySelector.NO_CREATIVE_OR_SPECTATOR);
 
-		for (PlayerEntity player : players) {
-			List<EndCrystalEntity> endCrystals = player.world.getNonSpectatingEntities(EndCrystalEntity.class, player.getBoundingBox().expand(10d));
+		for (Player player : players) {
+			List<EndCrystal> endCrystals = player.level.getEntitiesOfClass(EndCrystal.class, player.getBoundingBox().inflate(10d));
 			if (endCrystals.size() > 0) {
 				chance *= 2d;
 				break;
@@ -194,31 +185,31 @@ public class AttackFeature implements LabelConfigGroup {
 		return rng < chance;
 	}
 
-	private void chargePlayer(EnderDragonEntity dragon) {
-		BlockPos centerPodium = dragon.world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, EndPortalFeature.ORIGIN);
-		Box bb = new Box(centerPodium).expand(64d);
-		ServerPlayerEntity player = (ServerPlayerEntity) getRandomPlayerNearCrystal(dragon.world, bb);
+	private void chargePlayer(EnderDragon dragon) {
+		BlockPos centerPodium = dragon.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.END_PODIUM_LOCATION);
+		AABB bb = new AABB(centerPodium).inflate(64d);
+		ServerPlayer player = (ServerPlayer) getRandomPlayerNearCrystal(dragon.level, bb);
 
 		if (player == null)
 			return;
 
-		dragon.getPhaseManager().setPhase(PhaseType.CHARGING_PLAYER);
-		Vec3d targetPos = player.getPos();
+		dragon.getPhaseManager().setPhase(EnderDragonPhase.CHARGING_PLAYER);
+		Vec3 targetPos = player.position();
 		if (targetPos.y < dragon.getY())
 			targetPos = targetPos.add(0d, -5d, 0d);
 		else
 			targetPos = targetPos.add(0d, 6d, 0d);
-		dragon.getPhaseManager().create(PhaseType.CHARGING_PLAYER).setPathTarget(targetPos);
+		dragon.getPhaseManager().getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(targetPos);
 	}
 
-	private boolean shouldFireballPlayer(EnderDragonEntity dragon) {
+	private boolean shouldFireballPlayer(EnderDragon dragon) {
 		if (this.fireballMaxChance == 0f)
 			return false;
 
-		if (dragon.getFight() == null)
+		if (dragon.getDragonFight() == null)
 			return false;
 
-		NbtCompound tags = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag tags = ((IEntityExtraData) dragon).getPersistentData();
 		float difficulty = tags.getFloat(Strings.Tags.DIFFICULTY);
 
 		if (difficulty == 0f)
@@ -231,20 +222,20 @@ public class AttackFeature implements LabelConfigGroup {
 		return rng < chance;
 	}
 
-	private void fireballPlayer(EnderDragonEntity dragon) {
-		BlockPos centerPodium = dragon.world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, EndPortalFeature.ORIGIN);
-		Box bb = new Box(centerPodium).expand(64d);
-		ServerPlayerEntity player = (ServerPlayerEntity) getRandomPlayer(dragon.world, bb);
+	private void fireballPlayer(EnderDragon dragon) {
+		BlockPos centerPodium = dragon.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, EndPodiumFeature.END_PODIUM_LOCATION);
+		AABB bb = new AABB(centerPodium).inflate(64d);
+		ServerPlayer player = (ServerPlayer) getRandomPlayer(dragon.level, bb);
 
 		if (player == null)
 			return;
 
-		dragon.getPhaseManager().setPhase(PhaseType.STRAFE_PLAYER);
-		dragon.getPhaseManager().create(PhaseType.STRAFE_PLAYER).setTargetEntity(player);
+		dragon.getPhaseManager().setPhase(EnderDragonPhase.STRAFE_PLAYER);
+		dragon.getPhaseManager().getPhase(EnderDragonPhase.STRAFE_PLAYER).setTarget(player);
 	}
 
 
-	public boolean onFireballImpact(DragonFireballEntity fireball, @Nullable Entity shooter, HitResult result) {
+	public boolean onFireballImpact(DragonFireball fireball, @Nullable Entity shooter, HitResult result) {
 		if (!this.isEnabled())
 			return false;
 
@@ -252,27 +243,27 @@ public class AttackFeature implements LabelConfigGroup {
 		return onImpact3DCloud(fireball, result);
 	}
 
-	private void onImpactExplosion(DragonFireballEntity fireball, @Nullable Entity shooter, HitResult result) {
+	private void onImpactExplosion(DragonFireball fireball, @Nullable Entity shooter, HitResult result) {
 		if (!this.fireballExplosionDamages)
 			return;
 
 		float difficulty = 0;
 		if (shooter != null) {
-			NbtCompound compoundNBT = ((IEntityExtraData) shooter).getPersistentData();
+			CompoundTag compoundNBT = ((IEntityExtraData) shooter).getPersistentData();
 			difficulty = compoundNBT.getFloat(Strings.Tags.DIFFICULTY);
 		}
 
 		float damage = 6 * (1f + (float) (this.increasedAcidPoolDamage * difficulty));
 
-		Box axisAlignedBB = new Box(result.getPos(), result.getPos()).expand(4d);
-		List<LivingEntity> livingEntities = fireball.world.getNonSpectatingEntities(LivingEntity.class, axisAlignedBB);
+		AABB axisAlignedBB = new AABB(result.getLocation(), result.getLocation()).inflate(4d);
+		List<LivingEntity> livingEntities = fireball.level.getEntitiesOfClass(LivingEntity.class, axisAlignedBB);
 		for (LivingEntity livingEntity : livingEntities) {
-			if (livingEntity.squaredDistanceTo(fireball.getPos()) < 20.25d)
-				livingEntity.damage((new ProjectileDamageSource(Strings.Translatable.DRAGON_FIREBALL, fireball, shooter)).setBypassesArmor().setProjectile().setUsesMagic(), damage);
+			if (livingEntity.distanceToSqr(fireball.position()) < 20.25d)
+				livingEntity.hurt((new DamageSource(livingEntity.damageSources().mobProjectile(), fireball, shooter)).setBypassesArmor().setProjectile().setUsesMagic(), damage);
 		}
 	}
 
-	private boolean onImpact3DCloud(DragonFireballEntity fireball, HitResult result) {
+	private boolean onImpact3DCloud(DragonFireball fireball, HitResult result) {
 		if (!this.isEnabled())
 			return false;
 
@@ -281,38 +272,38 @@ public class AttackFeature implements LabelConfigGroup {
 
 		HitResult.Type raytraceresult$type = result.getType();
 		if (raytraceresult$type == HitResult.Type.ENTITY) {
-			fireball.onEntityHit((EntityHitResult)result);
+			fireball.onHitEntity((EntityHitResult)result);
 		}
 		else if (raytraceresult$type == HitResult.Type.BLOCK) {
-			fireball.onBlockHit((BlockHitResult)result);
+			fireball.onHitBlock((BlockHitResult)result);
 		}
 		Entity entity = fireball.getOwner();
-		if (result.getType() != HitResult.Type.ENTITY || !((EntityHitResult)result).getEntity().isPartOf(entity)) {
-			if (!fireball.world.isClient) {
-				List<LivingEntity> list = fireball.world.getNonSpectatingEntities(LivingEntity.class, fireball.getBoundingBox().expand(4.0D, 2.0D, 4.0D));
-				AreaEffectCloud3DEntity areaeffectcloudentity = new AreaEffectCloud3DEntity(fireball.world, fireball.getX(), fireball.getY(), fireball.getZ());
+		if (result.getType() != HitResult.Type.ENTITY || !((EntityHitResult)result).getEntity().is(entity)) {
+			if (!fireball.level.isClientSide) {
+				List<LivingEntity> list = fireball.level.getEntitiesOfClass(LivingEntity.class, fireball.getBoundingBox().inflate(4.0D, 2.0D, 4.0D));
+				AreaEffectCloud3DEntity areaeffectcloudentity = new AreaEffectCloud3DEntity(fireball.level, fireball.getX(), fireball.getY(), fireball.getZ());
 				if (entity instanceof LivingEntity) {
 					areaeffectcloudentity.setOwner((LivingEntity)entity);
 				}
 
-				areaeffectcloudentity.setParticleType(ParticleTypes.DRAGON_BREATH);
+				areaeffectcloudentity.setParticle(ParticleTypes.DRAGON_BREATH);
 				areaeffectcloudentity.setRadius(3.0F);
 				areaeffectcloudentity.setDuration(300);
 				areaeffectcloudentity.setWaitTime(10);
-				areaeffectcloudentity.setRadiusGrowth((7.0F - areaeffectcloudentity.getRadius()) / (float)areaeffectcloudentity.getDuration());
-				areaeffectcloudentity.addEffect(new StatusEffectInstance(StatusEffects.INSTANT_DAMAGE, 1, 1));
+				areaeffectcloudentity.setRadiusPerTick((7.0F - areaeffectcloudentity.getRadius()) / (float)areaeffectcloudentity.getDuration());
+				areaeffectcloudentity.addEffect(new MobEffectInstance(MobEffects.HARM, 1, 1));
 				if (!list.isEmpty()) {
 					for(LivingEntity livingentity : list) {
-						double d0 = fireball.squaredDistanceTo(livingentity);
+						double d0 = fireball.distanceToSqr(livingentity);
 						if (d0 < 16.0D) {
-							areaeffectcloudentity.setPos(livingentity.getX(), livingentity.getY(), livingentity.getZ());
+							areaeffectcloudentity.setPosRaw(livingentity.getX(), livingentity.getY(), livingentity.getZ());
 							break;
 						}
 					}
 				}
 
-				fireball.world.syncWorldEvent(2006, fireball.getBlockPos(), fireball.isSilent() ? -1 : 1);
-				fireball.world.spawnEntity(areaeffectcloudentity);
+				fireball.level.levelEvent(2006, fireball.blockPosition(), fireball.isSilent() ? -1 : 1);
+				fireball.level.addFreshEntity(areaeffectcloudentity);
 				fireball.discard();
 			}
 		}
@@ -320,23 +311,23 @@ public class AttackFeature implements LabelConfigGroup {
 		return true;
 	}
 
-	public void fireFireball(EnderDragonEntity dragon, LivingEntity attackTarget) {
-		Vec3d vector3d2 = dragon.getRotationVec(1.0F);
+	public void fireFireball(EnderDragon dragon, LivingEntity attackTarget) {
+		Vec3 vector3d2 = dragon.getViewVector(1.0F);
 		double x = dragon.head.getX() - vector3d2.x;
-		double y = dragon.head.getBodyY(0.5D) + 0.5D;
+		double y = dragon.head.getY(0.5D) + 0.5D;
 		double z = dragon.head.getZ() - vector3d2.z;
 		double xPower = attackTarget.getX() - x;
-		double yPower = attackTarget.getBodyY(0.5D) - y;
+		double yPower = attackTarget.getY(0.5D) - y;
 		double zPower = attackTarget.getZ() - z;
 		if (!dragon.isSilent()) {
-			dragon.world.syncWorldEvent(null, 1017, dragon.getBlockPos(), 0);
+			dragon.level.levelEvent(null, 1017, dragon.blockPosition(), 0);
 		}
 
-		DragonFireballEntity dragonfireballentity = new DragonFireballEntity(dragon.world, dragon, xPower, yPower, zPower);
-		dragonfireballentity.refreshPositionAndAngles(x, y, z, 0.0F, 0.0F);
-		dragon.world.spawnEntity(dragonfireballentity);
+		DragonFireball dragonfireballentity = new DragonFireball(dragon.level, dragon, xPower, yPower, zPower);
+		dragonfireballentity.moveTo(x, y, z, 0.0F, 0.0F);
+		dragon.level.addFreshEntity(dragonfireballentity);
 
-		NbtCompound compoundNBT = ((IEntityExtraData) dragon).getPersistentData();
+		CompoundTag compoundNBT = ((IEntityExtraData) dragon).getPersistentData();
 		float difficulty = compoundNBT.getFloat(Strings.Tags.DIFFICULTY);
 
 		float fireballs = RandomHelper.getFloat(dragon.getRandom(), 0f, (float) (maxBonusFireball * difficulty));
@@ -346,24 +337,24 @@ public class AttackFeature implements LabelConfigGroup {
 
 		for (int i = 0; i < fireballs; i++) {
 			x = dragon.head.getX() - vector3d2.x;
-			y = dragon.head.getBodyY(0.5D) + 0.5D;
+			y = dragon.head.getY(0.5D) + 0.5D;
 			z = dragon.head.getZ() - vector3d2.z;
 			xPower = attackTarget.getX() + RandomHelper.getDouble(dragon.getRandom(), -(fireballs), fireballs) - x;
-			yPower = attackTarget.getBodyY(0.5D) + RandomHelper.getDouble(dragon.getRandom(), -(fireballs), fireballs) - y;
+			yPower = attackTarget.getY(0.5D) + RandomHelper.getDouble(dragon.getRandom(), -(fireballs), fireballs) - y;
 			zPower = attackTarget.getZ() + RandomHelper.getDouble(dragon.getRandom(), -(fireballs), fireballs) - z;
 			if (!dragon.isSilent()) {
-				dragon.world.syncWorldEvent(null, 1017, dragon.getBlockPos(), 0);
+				dragon.level.levelEvent(null, 1017, dragon.blockPosition(), 0);
 			}
 
-			dragonfireballentity = new DragonFireballEntity(dragon.world, dragon, xPower, yPower, zPower);
-			dragonfireballentity.refreshPositionAndAngles(x, y, z, 0.0F, 0.0F);
-			dragon.world.spawnEntity(dragonfireballentity);
+			dragonfireballentity = new DragonFireball(dragon.level, dragon, xPower, yPower, zPower);
+			dragonfireballentity.moveTo(x, y, z, 0.0F, 0.0F);
+			dragon.level.addFreshEntity(dragonfireballentity);
 		}
 	}
 
 	@Nullable
-	public PlayerEntity getRandomPlayer(World world, Box boundingBox) {
-		List<PlayerEntity> players = world.getEntitiesByClass(PlayerEntity.class, boundingBox, EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR);
+	public Player getRandomPlayer(Level world, AABB boundingBox) {
+		List<Player> players = world.getEntitiesOfClass(Player.class, boundingBox, EntitySelector.NO_CREATIVE_OR_SPECTATOR);
 		if (players.isEmpty())
 			return null;
 
@@ -373,15 +364,15 @@ public class AttackFeature implements LabelConfigGroup {
 
 	//Returns a random player that is at least 10 blocks near a Crystal or a random player if no players are near crystals
 	@Nullable
-	public PlayerEntity getRandomPlayerNearCrystal(World world, Box boundingBox) {
-		List<PlayerEntity> players = world.getNonSpectatingEntities(PlayerEntity.class, boundingBox);
+	public Player getRandomPlayerNearCrystal(Level world, AABB boundingBox) {
+		List<Player> players = world.getEntitiesOfClass(Player.class, boundingBox);
 		if (players.isEmpty())
 			return null;
 
-		List<PlayerEntity> playersNearCrystals = new ArrayList<>();
+		List<Player> playersNearCrystals = new ArrayList<>();
 
- 		for (PlayerEntity player : players) {
-			List<EndCrystalEntity> endCrystals = player.world.getEntitiesByClass(EndCrystalEntity.class, player.getBoundingBox().expand(10d), EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR);
+ 		for (Player player : players) {
+			List<EndCrystal> endCrystals = player.level.getEntitiesOfClass(EndCrystal.class, player.getBoundingBox().inflate(10d), EntitySelector.NO_CREATIVE_OR_SPECTATOR);
 			if (endCrystals.size() > 0)
 				playersNearCrystals.add(player);
 		}

@@ -1,13 +1,12 @@
 package insane96mcp.progressivebosses.mixin;
 
+import insane96mcp.progressivebosses.utils.ExplosionEvents;
+import insane96mcp.progressivebosses.utils.ExplosionEvents.OnExplosionEvent;
+import net.minecraft.world.level.Explosion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import insane96mcp.progressivebosses.utils.ExplosionEvents;
-import insane96mcp.progressivebosses.utils.ExplosionEvents.OnExplosionEvent;
-import net.minecraft.world.explosion.Explosion;
 
 @Mixin(Explosion.class)
 public class AExplosionMixin {

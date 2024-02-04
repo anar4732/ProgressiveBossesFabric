@@ -1,22 +1,29 @@
 package insane96mcp.progressivebosses.module.wither.feature;
 
 import insane96mcp.progressivebosses.module.wither.dispenser.WitherSkullDispenseBehavior;
-import insane96mcp.progressivebosses.utils.*;
+import insane96mcp.progressivebosses.utils.DummyEvent;
+import insane96mcp.progressivebosses.utils.ExplosionEvents;
 import insane96mcp.progressivebosses.utils.ExplosionEvents.OnExplosionEvent;
+import insane96mcp.progressivebosses.utils.IEntityExtraData;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.Strings;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingHurtEvent;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.boss.wither.WitherBoss;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.DispenserBlock;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.DispenserBlock;
+import net.minecraft.entity.boss.WitherEntity;
+import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.dimension.DimensionTypes;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Misc", description = "Handles various small features, such as the explosion")
@@ -51,20 +58,20 @@ public class MiscFeature implements LabelConfigGroup {
 			DispenserBlock.registerBehavior(Items.WITHER_SKELETON_SKULL, new WitherSkullDispenseBehavior());
 			behaviourRegistered = true;
 		}
-		LivingEntityEvents.TICK.register((entity) -> this.onUpdate(new DummyEvent(entity.level, entity)));
+		LivingEntityEvents.TICK.register((entity) -> this.onUpdate(new DummyEvent(entity.getWorld(), entity)));
 		ExplosionEvents.EXPLODE.register((event) -> this.onExplosion(event));
 		LivingEntityEvents.HURT.register((event) -> this.onWitherDamage(event));
 		
 	}
 	
 	public void onUpdate(DummyEvent event) {
-		if (event.getEntity().level.isClientSide)
+		if (event.getEntity().getWorld().isClient)
 			return;
 		
 		if (!this.biggerBlockBreaking)
 			return;
 		
-		if (!(event.getEntity() instanceof WitherBoss wither))
+		if (!(event.getEntity() instanceof WitherEntity wither))
 			return;
 		
 		if (!wither.isAlive())
@@ -72,18 +79,18 @@ public class MiscFeature implements LabelConfigGroup {
 		
 		// Overrides the block breaking in wither's updateAI since LivingUpdateEvent is
 		// called before
-		if (wither.destroyBlocksTick == 1) {
-			--wither.destroyBlocksTick;
+		if (wither.blockBreakingCooldown == 1) {
+			--wither.blockBreakingCooldown;
 			// if
 			// (net.minecraftforge.event.ForgeEventFactory.getMobGriefingEvent(wither.world,
 			// wither)) {
-			int i1 = Mth.floor(wither.getY());
-			int l1 = Mth.floor(wither.getX());
-			int i2 = Mth.floor(wither.getZ());
+			int i1 = MathHelper.floor(wither.getY());
+			int l1 = MathHelper.floor(wither.getX());
+			int i2 = MathHelper.floor(wither.getZ());
 			boolean flag = false;
 			
 			int yOffsetLow = -1;
-			if (wither.isPowered())
+			if (wither.shouldRenderOverlay())
 				yOffsetLow = 0;
 			
 			for (int k2 = -1; k2 <= 1; ++k2) {
@@ -93,58 +100,58 @@ public class MiscFeature implements LabelConfigGroup {
 						int k = i1 + j;
 						int l = i2 + l2;
 						BlockPos blockpos = new BlockPos(i3, k, l);
-						BlockState blockstate = wither.level.getBlockState(blockpos);
+						BlockState blockstate = wither.getWorld().getBlockState(blockpos);
 						if (canWitherDestroy(wither, blockpos, blockstate)) {
-							flag = wither.level.destroyBlock(blockpos, true, wither) || flag;
+							flag = wither.getWorld().breakBlock(blockpos, true, wither) || flag;
 						}
 					}
 				}
 			}
 			
 			if (flag) {
-				wither.level.levelEvent(null, 1022, wither.blockPosition(), 0);
+				wither.getWorld().syncWorldEvent(null, 1022, wither.getBlockPos(), 0);
 			}
 		}
 		// }
 	}
 	
-	private boolean canWitherDestroy(WitherBoss wither, BlockPos pos, BlockState state) {
+	private boolean canWitherDestroy(WitherEntity wither, BlockPos pos, BlockState state) {
 		if (this.ignoreWitherProofBlocks)
-			return !state.isAir() && state.getDestroySpeed(wither.level, pos) >= 0f;
+			return !state.isAir() && state.getHardness(wither.getWorld(), pos) >= 0f;
 		 else
-		    return WitherBoss.canDestroy(state);
+		    return WitherEntity.canDestroy(state);
 	}
 	
 	public void onExplosion(OnExplosionEvent event) {
 		if (this.explosionCausesFireAtDifficulty == -1 && this.explosionPowerBonus == 0d)
 			return;
 		
-		if (!(event.getExplosion().getIndirectSourceEntity() instanceof WitherBoss wither))
+		if (!(event.getExplosion().getCausingEntity() instanceof WitherEntity wither))
 			return;
 		
 		// Check if the explosion is the one from the wither
-		if (event.getExplosion().radius != 7f)
+		if (event.getExplosion().power != 7f)
 			return;
 		
-		CompoundTag tags = ((IEntityExtraData) wither).getPersistentData();
+		NbtCompound tags = ((IEntityExtraData) wither).getPersistentData();
 		
 		float difficulty = tags.getFloat(Strings.Tags.DIFFICULTY);
 		
 		if (difficulty <= 0f)
 			return;
 		
-		float explosionPower = (float) (event.getExplosion().radius + (this.explosionPowerBonus * difficulty));
+		float explosionPower = (float) (event.getExplosion().power + (this.explosionPowerBonus * difficulty));
 		
 		if (explosionPower > 13f)
 			explosionPower = 13f;
 		
-		event.getExplosion().radius = explosionPower;
+		event.getExplosion().power = explosionPower;
 		
-		event.getExplosion().fire = difficulty >= this.explosionCausesFireAtDifficulty;
+		event.getExplosion().createFire = difficulty >= this.explosionCausesFireAtDifficulty;
 	}
 	
 	public void onWitherDamage(OnLivingHurtEvent event) {
-		if (event.getEntity().level.isClientSide)
+		if (event.getEntity().getWorld().isClient)
 			return;
 		
 		if (!this.fasterBlockBreaking)
@@ -153,10 +160,10 @@ public class MiscFeature implements LabelConfigGroup {
 		if (!event.getEntity().isAlive())
 			return;
 		
-		if (!(event.getEntity() instanceof WitherBoss wither))
+		if (!(event.getEntity() instanceof WitherEntity wither))
 			return;
 		
-		wither.destroyBlocksTick = 10;
+		wither.blockBreakingCooldown = 10;
 	}
 	
 	// @SubscribeEvent
@@ -173,12 +180,12 @@ public class MiscFeature implements LabelConfigGroup {
 	/**
 	 * Returns true if at the specified position a Wither Skull can be placed
 	 */
-	public static boolean canPlaceSkull(Level world, BlockPos pos) {
-		boolean isNether = world.dimension().location().equals(BuiltinDimensionTypes.NETHER_EFFECTS);
+	public static boolean canPlaceSkull(World world, BlockPos pos) {
+		boolean isNether = world.getRegistryKey().getValue().equals(DimensionTypes.THE_NETHER_ID);
 		
 		boolean hasSoulSandNearby = false;
 		for (Direction dir : Direction.values()) {
-			if (world.getBlockState(pos.offset(dir.getNormal())).getBlock().equals(Blocks.SOUL_SAND) || world.getBlockState(pos.offset(dir.getNormal())).getBlock().equals(Blocks.SOUL_SOIL)) {
+			if (world.getBlockState(pos.add(dir.getVector())).getBlock().equals(Blocks.SOUL_SAND) || world.getBlockState(pos.add(dir.getVector())).getBlock().equals(Blocks.SOUL_SOIL)) {
 				hasSoulSandNearby = true;
 				break;
 			}
@@ -186,6 +193,9 @@ public class MiscFeature implements LabelConfigGroup {
 		
 		// If it's not the nether or if it is but it's on the Nether roof and there's
 		// soulsand nearby
-		return (isNether && pos.getY() <= 127) || !hasSoulSandNearby;
+		if ((!isNether || pos.getY() > 127) && hasSoulSandNearby)
+			return false;
+		
+		return true;
 	}
 }

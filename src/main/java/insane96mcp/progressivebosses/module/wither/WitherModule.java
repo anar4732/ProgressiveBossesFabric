@@ -1,18 +1,24 @@
 package insane96mcp.progressivebosses.module.wither;
 
-import insane96mcp.progressivebosses.module.wither.feature.*;
+import java.util.ArrayList;
+import java.util.Collection;
+
+import insane96mcp.progressivebosses.module.wither.feature.AttackFeature;
+import insane96mcp.progressivebosses.module.wither.feature.DifficultyFeature;
+import insane96mcp.progressivebosses.module.wither.feature.HealthFeature;
+import insane96mcp.progressivebosses.module.wither.feature.MinionFeature;
+import insane96mcp.progressivebosses.module.wither.feature.MiscFeature;
+import insane96mcp.progressivebosses.module.wither.feature.ResistancesFeature;
+import insane96mcp.progressivebosses.module.wither.feature.RewardFeature;
 import insane96mcp.progressivebosses.utils.Label;
 import insane96mcp.progressivebosses.utils.LabelConfigGroup;
 import me.lortseam.completeconfig.api.ConfigContainer;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 @Label(name = "Wither")
 public class WitherModule implements LabelConfigGroup {
 
-	private final ArrayList<ConfigContainer> configs = new ArrayList<>();
+	private ArrayList<ConfigContainer> configs = new ArrayList<>();
 
 	public DifficultyFeature difficulty;
 	public MiscFeature misc;

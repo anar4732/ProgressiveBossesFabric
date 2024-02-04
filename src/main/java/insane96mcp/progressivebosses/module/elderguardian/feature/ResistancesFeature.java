@@ -6,7 +6,7 @@ import insane96mcp.progressivebosses.utils.LivingEntityEvents;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingHurtEvent;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
-import net.minecraft.world.entity.monster.ElderGuardian;
+import net.minecraft.entity.mob.ElderGuardianEntity;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Resistances", description = "Handles the Damage Resistances")
@@ -25,10 +25,10 @@ public class ResistancesFeature implements LabelConfigGroup {
 		if (this.resistancePerElderGuardianDefeated == 0d)
 			return;
 
-		if (!(event.getEntity() instanceof ElderGuardian))
+		if (!(event.getEntity() instanceof ElderGuardianEntity))
 			return;
 
-		ElderGuardian elderGuardian = (ElderGuardian) event.getEntity();
+		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
 
 		float damageReduction = (float) (BaseFeature.getDeadElderGuardians(elderGuardian) * this.resistancePerElderGuardianDefeated);
 

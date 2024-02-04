@@ -53,4 +53,3 @@ accessible    field    net/minecraft/world/explosion/Explosion    z    D
 accessible    field    net/minecraft/entity/mob/MobEntity    targetSelector    Lnet/minecraft/entity/ai/goal/GoalSelector;
 accessible    method    net/minecraft/entity/projectile/ProjectileEntity    onEntityHit    (Lnet/minecraft/util/hit/EntityHitResult;)V
 accessible    method    net/minecraft/entity/projectile/ProjectileEntity    onBlockHit    (Lnet/minecraft/util/hit/BlockHitResult;)V
-#accessible    method    net/minecraft/entity/damage/DamageSource    setBypassesArmor    ()Lnet/minecraft/entity/damage/DamageSource;

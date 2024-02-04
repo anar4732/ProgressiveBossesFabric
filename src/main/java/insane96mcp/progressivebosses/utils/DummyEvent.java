@@ -1,18 +1,18 @@
 package insane96mcp.progressivebosses.utils;
 
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.Entity;
+import net.minecraft.world.World;
 
 public class DummyEvent {
-    private final Level world;
-    private final Entity entity;
+    private World world;
+    private Entity entity;
 
-    public DummyEvent(Level world, Entity entity) {
+    public DummyEvent(World world, Entity entity) {
         this.world = world;
         this.entity = entity;
     }
 
-    public Level getWorld() {
+    public World getWorld() {
         return world;
     }
 

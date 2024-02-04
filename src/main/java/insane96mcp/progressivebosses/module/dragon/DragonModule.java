@@ -1,18 +1,25 @@
 package insane96mcp.progressivebosses.module.dragon;
 
-import insane96mcp.progressivebosses.module.dragon.feature.*;
+import java.util.ArrayList;
+import java.util.Collection;
+
+import insane96mcp.progressivebosses.module.dragon.feature.AttackFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.CrystalFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.DifficultyFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.HealthFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.LarvaFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.MinionFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.ResistancesFeature;
+import insane96mcp.progressivebosses.module.dragon.feature.RewardFeature;
 import insane96mcp.progressivebosses.utils.Label;
 import insane96mcp.progressivebosses.utils.LabelConfigGroup;
 import me.lortseam.completeconfig.api.ConfigContainer;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 @Label(name = "Dragon")
 public class DragonModule implements LabelConfigGroup {
 
-	private final ArrayList<ConfigContainer> configs = new ArrayList<>();
+	private ArrayList<ConfigContainer> configs = new ArrayList<>();
 
 	public DifficultyFeature difficulty;
 	public HealthFeature health;

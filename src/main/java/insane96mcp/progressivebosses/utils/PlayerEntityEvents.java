@@ -2,7 +2,7 @@ package insane96mcp.progressivebosses.utils;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.entity.player.PlayerEntity;
 
 public class PlayerEntityEvents {
     public static Event<OnPlayerTick> TICK = EventFactory.createArrayBacked(OnPlayerTick.class, (listeners) -> (player) -> {
@@ -13,6 +13,6 @@ public class PlayerEntityEvents {
 
     @FunctionalInterface
     public interface OnPlayerTick {
-        void interact(Player player);
+        void interact(PlayerEntity player);
     }
 }

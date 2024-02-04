@@ -1,15 +1,22 @@
 package insane96mcp.progressivebosses.module.wither.feature;
 
-import insane96mcp.progressivebosses.utils.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import insane96mcp.progressivebosses.utils.Drop;
+import insane96mcp.progressivebosses.utils.DummyEvent;
+import insane96mcp.progressivebosses.utils.IEntityExtraData;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.Strings;
 import insane96mcp.progressivebosses.utils.LivingEntityEvents.OnLivingDeathEvent;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.entity.boss.wither.WitherBoss;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import net.minecraft.entity.boss.WitherEntity;
+import net.minecraft.nbt.NbtCompound;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Rewards", description = "Bonus Experience and Drops")
@@ -45,32 +52,32 @@ public class RewardFeature implements LabelConfigGroup {
 	}
 
 	public void onSpawn(DummyEvent event) {
-		if (event.getWorld().isClientSide)
+		if (event.getWorld().isClient)
 			return;
 
 		if (this.bonusExperience == 0d)
 			return;
 
-		if (!(event.getEntity() instanceof WitherBoss wither))
+		if (!(event.getEntity() instanceof WitherEntity wither))
 			return;
 
-		CompoundTag witherTags = ((IEntityExtraData) wither).getPersistentData();
+		NbtCompound witherTags = ((IEntityExtraData) wither).getPersistentData();
 		float difficulty = witherTags.getFloat(Strings.Tags.DIFFICULTY);
 
-		wither.xpReward = 50 + (int) (50 * (this.bonusExperience * difficulty));
+		wither.experiencePoints = 50 + (int) (50 * (this.bonusExperience * difficulty));
 	}
 
 	public void onDeath(OnLivingDeathEvent event) {
 		if (this.dropsList.isEmpty())
 			return;
 
-		if (!(event.getEntity() instanceof WitherBoss wither))
+		if (!(event.getEntity() instanceof WitherEntity wither))
 			return;
 
-		CompoundTag tags = ((IEntityExtraData) wither).getPersistentData();
+		NbtCompound tags = ((IEntityExtraData) wither).getPersistentData();
 		float difficulty = tags.getFloat(Strings.Tags.DIFFICULTY);
 		for (Drop drop : this.dropsList) {
-			drop.drop(wither.level, wither.position(), difficulty);
+			drop.drop(wither.getWorld(), wither.getPos(), difficulty);
 		}
 	}
 }

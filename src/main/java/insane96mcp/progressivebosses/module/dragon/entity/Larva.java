@@ -1,104 +1,102 @@
 package insane96mcp.progressivebosses.module.dragon.entity;
 
-import EntityGroup;
-import insane96mcp.progressivebosses.module.Modules;
-import insane96mcp.progressivebosses.module.dragon.ai.PBNearestAttackableTargetGoal;
-import net.minecraft.core.BlockPos;
-import net.minecraft.entity.*;
-import net.minecraft.entity.ai.goal.*;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobType;
-import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
-import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
-public class Larva extends Monster {
-	public Larva(EntityType<? extends Larva> p_32591_, Level p_32592_) {
+import insane96mcp.progressivebosses.module.Modules;
+import insane96mcp.progressivebosses.module.dragon.ai.PBNearestAttackableTargetGoal;
+import net.minecraft.block.BlockState;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityDimensions;
+import net.minecraft.entity.EntityGroup;
+import net.minecraft.entity.EntityPose;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.ai.goal.LookAroundGoal;
+import net.minecraft.entity.ai.goal.LookAtEntityGoal;
+import net.minecraft.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.entity.ai.goal.SwimGoal;
+import net.minecraft.entity.ai.goal.WanderAroundFarGoal;
+import net.minecraft.entity.attribute.DefaultAttributeContainer;
+import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.boss.dragon.EnderDragonEntity;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+
+public class Larva extends HostileEntity {
+	public Larva(EntityType<? extends Larva> p_32591_, World p_32592_) {
 		super(p_32591_, p_32592_);
-		this.xpReward = 3;
+		this.experiencePoints = 3;
 	}
 
-	protected void registerGoals() {
-		this.goalSelector.addGoal(1, new FloatGoal(this));
-		this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, false));
-		this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-		this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 8.0F));
-		this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
-		this.targetSelector.addGoal(1, new PBNearestAttackableTargetGoal(this));
+	protected void initGoals() {
+		this.goalSelector.add(1, new SwimGoal(this));
+		this.goalSelector.add(2, new MeleeAttackGoal(this, 1.0D, false));
+		this.goalSelector.add(3, new WanderAroundFarGoal(this, 1.0D));
+		this.goalSelector.add(7, new LookAtEntityGoal(this, PlayerEntity.class, 8.0F));
+		this.goalSelector.add(8, new LookAroundGoal(this));
+		this.targetSelector.add(1, new PBNearestAttackableTargetGoal(this));
 	}
 
-	protected float getStandingEyeHeight(Pose p_32604_, EntityDimensions p_32605_) {
+	protected float getActiveEyeHeight(EntityPose p_32604_, EntityDimensions p_32605_) {
 		return 0.13F;
 	}
 
-	protected Entity.MovementEmission getMovementEmission() {
-		return Entity.MovementEmission.EVENTS;
+	protected Entity.MoveEffect getMoveEffect() {
+		return Entity.MoveEffect.EVENTS;
 	}
 
 	protected SoundEvent getAmbientSound() {
-		return SoundEvents.ENDERMITE_AMBIENT;
+		return SoundEvents.ENTITY_ENDERMITE_AMBIENT;
 	}
 
 	protected SoundEvent getHurtSound(DamageSource p_32615_) {
-		return SoundEvents.ENDERMITE_HURT;
+		return SoundEvents.ENTITY_ENDERMITE_HURT;
 	}
 
 	protected SoundEvent getDeathSound() {
-		return SoundEvents.ENDERMITE_DEATH;
+		return SoundEvents.ENTITY_ENDERMITE_DEATH;
 	}
 
 	protected void playStepSound(BlockPos p_32607_, BlockState p_32608_) {
-		this.playSound(SoundEvents.ENDERMITE_STEP, 0.15F, 1.0F);
+		this.playSound(SoundEvents.ENTITY_ENDERMITE_STEP, 0.15F, 1.0F);
 	}
 
 	public void tick() {
-		this.yBodyRot = this.getYRot();
+		this.bodyYaw = this.getYaw();
 		super.tick();
 	}
 
-	public void setYBodyRot(float p_32621_) {
-		this.setYRot(p_32621_);
-		super.setYBodyRot(p_32621_);
+	public void setBodyYaw(float p_32621_) {
+		this.setYaw(p_32621_);
+		super.setBodyYaw(p_32621_);
 	}
 
-	public double getMyRidingOffset() {
+	public double getHeightOffset() {
 		return 0.1D;
 	}
 
 	@Override
-	public boolean hurt(DamageSource damageSource, float amount) {
-		if (Modules.dragon.larva.isEnabled() && Modules.dragon.larva.reducedDragonDamage && damageSource.getEntity() instanceof EnderDragon)
-			return super.hurt(damageSource, amount * 0.1f);
-		return super.hurt(damageSource, amount);
+	public boolean damage(DamageSource damageSource, float amount) {
+		if (Modules.dragon.larva.isEnabled() && Modules.dragon.larva.reducedDragonDamage && damageSource.getAttacker() instanceof EnderDragonEntity)
+			return super.damage(damageSource, amount * 0.1f);
+		return super.damage(damageSource, amount);
 	}
 
-	public @NotNull MobType getMobType() {
-		return MobType.ARTHROPOD;
+	public @NotNull EntityGroup getGroup() {
+		return EntityGroup.ARTHROPOD;
 	}
 
-	public static AttributeSupplier.Builder prepareAttributes() {
+	public static DefaultAttributeContainer.Builder prepareAttributes() {
 		return LivingEntity.createLivingAttributes()
-				.add(Attributes.ATTACK_DAMAGE, 2.0d)
-				.add(Attributes.MAX_HEALTH, 6.0d)
-				.add(Attributes.FOLLOW_RANGE, 64.0d)
-				.add(Attributes.MOVEMENT_SPEED, 0.44d)
-				.add(Attributes.ATTACK_KNOCKBACK, 1.5d);
+				.add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 2.0d)
+				.add(EntityAttributes.GENERIC_MAX_HEALTH, 6.0d)
+				.add(EntityAttributes.GENERIC_FOLLOW_RANGE, 64.0d)
+				.add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.44d)
+				.add(EntityAttributes.GENERIC_ATTACK_KNOCKBACK, 1.5d);
 	}
 }

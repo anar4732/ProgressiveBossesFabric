@@ -16,7 +16,8 @@
     "HoldingPatternPhaseMixin",
     "LandingPhaseMixin",
     "ShulkerBulletEntityMixin",
-    "StrafePlayerPhaseMixin"
+    "StrafePlayerPhaseMixin",
+    "TranslationKeyMixin"
   ],
   "client": [
     "client.WitherBossRendererMixin"

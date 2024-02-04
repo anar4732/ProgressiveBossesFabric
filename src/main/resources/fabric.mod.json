@@ -7,7 +7,8 @@
   "description": "Make Bosses harder the more you respawn them. Adding Health, Armor and some Abilities.",
   "authors": [
     "anar4732",
-    "Insane96MCP"
+    "Insane96MCP",
+    "FasterThanLight"
   ],
   "license": "MIT License",
   "environment": "*",
@@ -28,7 +29,7 @@
   "depends": {
     "fabricloader": ">=0.14.19",
     "fabric": "*",
-    "minecraft": "~1.19.4",
+    "minecraft": "~1.20.1",
     "java": ">=17"
   },
   "custom": {

@@ -1,30 +1,37 @@
 package insane96mcp.progressivebosses.module.elderguardian.feature;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import insane96mcp.progressivebosses.module.elderguardian.ai.ElderMinionNearestAttackableTargetGoal;
-import insane96mcp.progressivebosses.utils.*;
+import insane96mcp.progressivebosses.utils.DummyEvent;
+import insane96mcp.progressivebosses.utils.IEntityExtraData;
+import insane96mcp.progressivebosses.utils.Label;
+import insane96mcp.progressivebosses.utils.LabelConfigGroup;
+import insane96mcp.progressivebosses.utils.LivingEntityEvents;
+import insane96mcp.progressivebosses.utils.MCUtils;
+import insane96mcp.progressivebosses.utils.Strings;
 import me.lortseam.completeconfig.api.ConfigEntries;
 import me.lortseam.completeconfig.api.ConfigEntry;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.ai.goal.WrappedGoal;
-import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.monster.ElderGuardian;
-import net.minecraft.world.entity.monster.Guardian;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.loot.BuiltInLootTables;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
-import java.util.ArrayList;
-import java.util.List;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.ai.goal.ActiveTargetGoal;
+import net.minecraft.entity.ai.goal.Goal;
+import net.minecraft.entity.ai.goal.PrioritizedGoal;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
+import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.mob.ElderGuardianEntity;
+import net.minecraft.entity.mob.GuardianEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.loot.LootTables;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.TranslatableTextContent;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 
 @ConfigEntries(includeAll = true)
 @Label(name = "Minions", description = "Elder Guardians will spawn Elder Minions.")
@@ -41,34 +48,34 @@ public class MinionFeature implements LabelConfigGroup {
 	public MinionFeature(LabelConfigGroup parent) {
 		parent.addConfigContainer(this);
 		ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> this.onElderGuardianSpawn(new DummyEvent(world, entity)));
-		LivingEntityEvents.TICK.register((entity) -> this.update(new DummyEvent(entity.level, entity)));
+		LivingEntityEvents.TICK.register((entity) -> this.update(new DummyEvent(entity.getWorld(), entity)));
 	}
 
 	public void onElderGuardianSpawn(DummyEvent event) {
-		if (event.getWorld().isClientSide)
+		if (event.getWorld().isClient)
 			return;
 
-		if (!(event.getEntity() instanceof ElderGuardian))
+		if (!(event.getEntity() instanceof ElderGuardianEntity))
 			return;
 
-		ElderGuardian elderGuardian = (ElderGuardian) event.getEntity();
+		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
 
-		CompoundTag witherTags = ((IEntityExtraData) elderGuardian).getPersistentData();
+		NbtCompound witherTags = ((IEntityExtraData) elderGuardian).getPersistentData();
 
 		witherTags.putInt(Strings.Tags.ELDER_MINION_COOLDOWN, this.baseCooldown);
 	}
 
 	public void update(DummyEvent event) {
-		if (event.getEntity().level.isClientSide)
+		if (event.getEntity().getWorld().isClient)
 			return;
 
-		if (!(event.getEntity() instanceof ElderGuardian))
+		if (!(event.getEntity() instanceof ElderGuardianEntity))
 			return;
 
-		Level world = event.getEntity().level;
+		World world = event.getEntity().getWorld();
 
-		ElderGuardian elderGuardian = (ElderGuardian) event.getEntity();
-		CompoundTag elderGuardianTags = ((IEntityExtraData) elderGuardian).getPersistentData();
+		ElderGuardianEntity elderGuardian = (ElderGuardianEntity) event.getEntity();
+		NbtCompound elderGuardianTags = ((IEntityExtraData) elderGuardian).getPersistentData();
 
 		if (elderGuardian.getHealth() <= 0)
 			return;
@@ -81,50 +88,50 @@ public class MinionFeature implements LabelConfigGroup {
 
 		//If there is no player in a radius from the elderGuardian, don't spawn minions
 		int radius = 24;
-		BlockPos pos1 = elderGuardian.blockPosition().offset(-radius, -radius, -radius);
-		BlockPos pos2 = elderGuardian.blockPosition().offset(radius, radius, radius);
-		AABB bb = new AABB(pos1, pos2);
-		List<ServerPlayer> players = world.getEntitiesOfClass(ServerPlayer.class, bb);
+		BlockPos pos1 = elderGuardian.getBlockPos().add(-radius, -radius, -radius);
+		BlockPos pos2 = elderGuardian.getBlockPos().add(radius, radius, radius);
+		Box bb = new Box(pos1, pos2);
+		List<ServerPlayerEntity> players = world.getNonSpectatingEntities(ServerPlayerEntity.class, bb);
 
 		if (players.isEmpty())
 			return;
 
-		List<Guardian> minionsInAABB = world.getEntitiesOfClass(Guardian.class, elderGuardian.getBoundingBox().inflate(12), entity -> ((IEntityExtraData) entity).getPersistentData().contains(Strings.Tags.ELDER_MINION));
+		List<GuardianEntity> minionsInAABB = world.getEntitiesByClass(GuardianEntity.class, elderGuardian.getBoundingBox().expand(12), entity -> ((IEntityExtraData) entity).getPersistentData().contains(Strings.Tags.ELDER_MINION));
 		int minionsCountInAABB = minionsInAABB.size();
 
 		if (minionsCountInAABB >= 5)
 			return;
 
-		summonMinion(world, new Vec3(elderGuardian.getX(), elderGuardian.getY(), elderGuardian.getZ()));
+		summonMinion(world, new Vec3d(elderGuardian.getX(), elderGuardian.getY(), elderGuardian.getZ()));
 	}
 
-	public Guardian summonMinion(Level world, Vec3 pos) {
-		Guardian elderMinion = new Guardian(EntityType.GUARDIAN, world);
-		CompoundTag minionTags = ((IEntityExtraData) elderMinion).getPersistentData();
+	public GuardianEntity summonMinion(World world, Vec3d pos) {
+		GuardianEntity elderMinion = new GuardianEntity(EntityType.GUARDIAN, world);
+		NbtCompound minionTags = ((IEntityExtraData) elderMinion).getPersistentData();
 
 		minionTags.putBoolean("mobspropertiesrandomness:processed", true);
 		//TODO Scaling health
 
 		minionTags.putBoolean(Strings.Tags.ELDER_MINION, true);
 
-		elderMinion.setPos(pos.x, pos.y, pos.z);
-		elderMinion.setCustomName(MutableComponent.create(new TranslatableContents(Strings.Translatable.ELDER_MINION)));
-		elderMinion.lootTable = BuiltInLootTables.EMPTY;
+		elderMinion.setPosition(pos.x, pos.y, pos.z);
+		elderMinion.setCustomName(MutableText.of(new TranslatableTextContent(Strings.Translatable.ELDER_MINION, "translate error at ELDER_MINION", new Object[]{})));
+		elderMinion.lootTable = LootTables.EMPTY;
 
-		MCUtils.applyModifier(elderMinion, Attributes.MOVEMENT_SPEED, Strings.AttributeModifiers.SWIM_SPEED_BONUS_UUID, Strings.AttributeModifiers.SWIM_SPEED_BONUS, 2d, AttributeModifier.Operation.MULTIPLY_BASE);
+		MCUtils.applyModifier(elderMinion, EntityAttributes.GENERIC_MOVEMENT_SPEED, Strings.AttributeModifiers.SWIM_SPEED_BONUS_UUID, Strings.AttributeModifiers.SWIM_SPEED_BONUS, 2d, EntityAttributeModifier.Operation.MULTIPLY_BASE);
 
 		ArrayList<Goal> goalsToRemove = new ArrayList<>();
-		for (WrappedGoal prioritizedGoal : elderMinion.targetSelector.availableGoals) {
-			if (!(prioritizedGoal.getGoal() instanceof NearestAttackableTargetGoal))
+		for (PrioritizedGoal prioritizedGoal : elderMinion.targetSelector.goals) {
+			if (!(prioritizedGoal.getGoal() instanceof ActiveTargetGoal))
 				continue;
 
 			goalsToRemove.add(prioritizedGoal.getGoal());
 		}
 
-		goalsToRemove.forEach(elderMinion.goalSelector::removeGoal);
-		elderMinion.targetSelector.addGoal(1, new ElderMinionNearestAttackableTargetGoal<>(elderMinion, Player.class, true));
+		goalsToRemove.forEach(elderMinion.goalSelector::remove);
+		elderMinion.targetSelector.add(1, new ElderMinionNearestAttackableTargetGoal<>(elderMinion, PlayerEntity.class, true));
 
-		world.addFreshEntity(elderMinion);
+		world.spawnEntity(elderMinion);
 		return elderMinion;
 	}
 }

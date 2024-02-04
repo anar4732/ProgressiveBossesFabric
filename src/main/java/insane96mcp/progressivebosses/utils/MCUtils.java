@@ -2,25 +2,26 @@ package insane96mcp.progressivebosses.utils;
 
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
+
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.attribute.EntityAttribute;
+import net.minecraft.entity.attribute.EntityAttributeInstance;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
+import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 
 public class MCUtils {
 	/**
 	 * Returns the current speed of the player compared to his normal speed
 	 */
-	public static double getMovementSpeedRatio(Player player) {
+	public static double getMovementSpeedRatio(PlayerEntity player) {
 		double baseMS = 0.1d;
 		if (player.isSprinting())
 			baseMS += 0.03f;
-		double playerMS = player.getAttributeValue(Attributes.MOVEMENT_SPEED);
+		double playerMS = player.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED);
 		return playerMS / baseMS;
 	}
 
@@ -28,9 +29,9 @@ public class MCUtils {
 	 * Different version of ItemStack#addAttributeModifiers that doesn't override
 	 * the item's base modifiers
 	 */
-	public static void addAttributeModifierToItemStack(ItemStack itemStack, Attribute attribute, AttributeModifier modifier, EquipmentSlot modifierSlot) {
-		if (itemStack.hasTag() && !itemStack.getTag().contains("AttributeModifiers", 9)) {
-			for (Map.Entry<Attribute, AttributeModifier> entry : itemStack.getAttributeModifiers(modifierSlot).entries()) {
+	public static void addAttributeModifierToItemStack(ItemStack itemStack, EntityAttribute attribute, EntityAttributeModifier modifier, EquipmentSlot modifierSlot) {
+		if (itemStack.hasNbt() && !itemStack.getNbt().contains("AttributeModifiers", 9)) {
+			for (Map.Entry<EntityAttribute, EntityAttributeModifier> entry : itemStack.getAttributeModifiers(modifierSlot).entries()) {
 				itemStack.addAttributeModifier(entry.getKey(), entry.getValue(), modifierSlot);
 			}
 		}
@@ -40,19 +41,19 @@ public class MCUtils {
 	/**
 	 * Applies a modifier to the Living Entity. If the attribute is max_health also
 	 * sets entity's health to his max health
-	 *
+	 * 
 	 * @return true if the modifier was applied
 	 */
-	public static boolean applyModifier(LivingEntity entity, Attribute attribute, UUID uuid, String name, double amount, AttributeModifier.Operation operation, boolean permanent) {
-		AttributeInstance attributeInstance = entity.getAttribute(attribute);
+	public static boolean applyModifier(LivingEntity entity, EntityAttribute attribute, UUID uuid, String name, double amount, EntityAttributeModifier.Operation operation, boolean permanent) {
+		EntityAttributeInstance attributeInstance = entity.getAttributeInstance(attribute);
 		if (attributeInstance != null) {
-			AttributeModifier modifier = new AttributeModifier(uuid, name, amount, operation);
+			EntityAttributeModifier modifier = new EntityAttributeModifier(uuid, name, amount, operation);
 			if (permanent)
-				attributeInstance.addPermanentModifier(modifier);
+				attributeInstance.addPersistentModifier(modifier);
 			else
-				attributeInstance.addTransientModifier(modifier);
+				attributeInstance.addTemporaryModifier(modifier);
 
-			if (attribute == Attributes.MAX_HEALTH)
+			if (attribute == EntityAttributes.GENERIC_MAX_HEALTH)
 				entity.setHealth(entity.getMaxHealth());
 			return true;
 		}
@@ -62,24 +63,24 @@ public class MCUtils {
 	/**
 	 * Applies a permanent modifier to the Living Entity. If the attribute is
 	 * max_health also sets entity's health to his max health
-	 *
+	 * 
 	 * @return true if the modifier was applied
 	 */
-	public static boolean applyModifier(LivingEntity entity, Attribute attribute, UUID uuid, String name, double amount, AttributeModifier.Operation operation) {
+	public static boolean applyModifier(LivingEntity entity, EntityAttribute attribute, UUID uuid, String name, double amount, EntityAttributeModifier.Operation operation) {
 		return applyModifier(entity, attribute, uuid, name, amount, operation, true);
 	}
 
 	/**
 	 * Sets the value of an attribute
-	 *
+	 * 
 	 * @return true if the override was successful
 	 */
-	public static boolean setAttributeValue(LivingEntity entity, Attribute attribute, double value) {
-		AttributeInstance attributeInstance = entity.getAttribute(attribute);
+	public static boolean setAttributeValue(LivingEntity entity, EntityAttribute attribute, double value) {
+		EntityAttributeInstance attributeInstance = entity.getAttributeInstance(attribute);
 		if (attributeInstance != null) {
 			attributeInstance.setBaseValue(value);
 
-			if (attribute == Attributes.MAX_HEALTH)
+			if (attribute == EntityAttributes.GENERIC_MAX_HEALTH)
 				entity.setHealth(entity.getMaxHealth());
 
 			return true;
@@ -88,10 +89,10 @@ public class MCUtils {
 	}
 
 	public static boolean hurtIgnoreInvuln(LivingEntity hurtEntity, DamageSource source, float amount) {
-		int hurtResistantTime = hurtEntity.invulnerableTime;
-		hurtEntity.invulnerableTime = 0;
-		boolean attacked = hurtEntity.hurt(source, amount);
-		hurtEntity.invulnerableTime = hurtResistantTime;
+		int hurtResistantTime = hurtEntity.timeUntilRegen;
+		hurtEntity.timeUntilRegen = 0;
+		boolean attacked = hurtEntity.damage(source, amount);
+		hurtEntity.timeUntilRegen = hurtResistantTime;
 		return attacked;
 	}
 }

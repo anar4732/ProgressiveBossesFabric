@@ -1,18 +1,23 @@
 package insane96mcp.progressivebosses.module.elderguardian;
 
-import insane96mcp.progressivebosses.module.elderguardian.feature.*;
+import java.util.ArrayList;
+import java.util.Collection;
+
+import insane96mcp.progressivebosses.module.elderguardian.feature.AttackFeature;
+import insane96mcp.progressivebosses.module.elderguardian.feature.BaseFeature;
+import insane96mcp.progressivebosses.module.elderguardian.feature.HealthFeature;
+import insane96mcp.progressivebosses.module.elderguardian.feature.MinionFeature;
+import insane96mcp.progressivebosses.module.elderguardian.feature.ResistancesFeature;
+import insane96mcp.progressivebosses.module.elderguardian.feature.RewardFeature;
 import insane96mcp.progressivebosses.utils.Label;
 import insane96mcp.progressivebosses.utils.LabelConfigGroup;
 import me.lortseam.completeconfig.api.ConfigContainer;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 @Label(name = "Elder Guardian")
 public class ElderGuardianModule implements LabelConfigGroup {
 
-	private final ArrayList<ConfigContainer> configs = new ArrayList<>();
+	private ArrayList<ConfigContainer> configs = new ArrayList<>();
 
 	public HealthFeature health;
 	public BaseFeature base;
